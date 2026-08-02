@@ -1,0 +1,73 @@
+// Prisma Schema für "Zur rostigen Gabel"
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum MenuCategory {
+  VORSPEISE
+  HAUPTGERICHT
+  DESSERT
+  GETRAENK
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model MenuItem {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  category    MenuCategory
+  isAvailable Boolean      @default(true)
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model OpeningHour {
+  id        String   @id @default(cuid())
+  weekday   Int      @unique // 0 = Sonntag ... 6 = Samstag
+  isClosed  Boolean  @default(false)
+  opensAt   String? // Format "HH:mm"
+  closesAt  String? // Format "HH:mm"
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSettings {
+  id             Int      @id @default(1)
+  restaurantName String   @default("Zur rostigen Gabel")
+  heroTitle      String   @default("Herzhaft. Ehrlich. Zur rostigen Gabel.")
+  heroSubtitle   String   @default("Deftige Hausmannskost und moderne Küche in gemütlicher Atmosphäre.")
+  aboutTitle     String   @default("Über uns")
+  aboutText      String   @default("Seit vielen Jahren verwöhnen wir unsere Gäste mit ehrlicher, regionaler Küche und Gerichten mit Charakter. In unserem Restaurant \"Zur rostigen Gabel\" treffen traditionelle Rezepte auf moderne Interpretationen – serviert in warmer, einladender Atmosphäre.")
+  addressStreet  String   @default("Hauptstraße 12")
+  addressCity    String   @default("12345 Musterstadt")
+  phone          String   @default("+49 123 456789")
+  email          String   @default("info@zur-rostigen-gabel.de")
+  mapUrl         String?
+  updatedAt      DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
