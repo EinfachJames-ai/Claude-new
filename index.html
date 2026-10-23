@@ -81,107 +81,51 @@
     </section>
 
     <!-- Dashboard showcase -->
-    <section class="showcase" id="dashboard" aria-label="Beispielansicht unseres Monitorings">
+    <section class="showcase" id="dashboard" aria-label="Beispielprojekt: so entsteht eine Website">
       <div class="cone" aria-hidden="true"></div>
       <div class="wrap">
         <div class="device-frame" data-tilt>
           <div class="device">
-            <div class="device-bar" aria-hidden="true"><i></i><i></i><i></i><span>status.jk-unique.de</span></div>
-            <div class="dash">
-              <aside class="dash-side" aria-hidden="true">
-                <span class="dash-brand">JK-Unique</span>
-                <span class="dash-search">Suchen</span>
-                <span class="dash-group">Übersicht</span>
-                <span class="dash-link is-active">Dashboard</span>
-                <span class="dash-link">Websites</span>
-                <span class="dash-link">Hosting</span>
-                <span class="dash-link">Automationen</span>
-                <span class="dash-link">Berichte</span>
-                <span class="dash-group">Konto</span>
-                <span class="dash-link">Einstellungen</span>
-              </aside>
-
-              <div class="dash-main">
-                <div class="dash-head">
-                  <div>
-                    <p class="dash-title">Willkommen zurück</p>
-                    <p class="dash-sub">Alle Systeme laufen stabil.</p>
-                  </div>
-                  <span class="dash-live"><span class="live-dot" aria-hidden="true"></span>Live</span>
+            <div class="device-bar" aria-hidden="true"><i></i><i></i><i></i><span>musterfirma.de</span></div>
+            <div class="studio">
+              <div class="editor" aria-hidden="true">
+                <div class="editor-tabs"><span class="is-active">index.html</span></div>
+                <pre class="code" data-code-scroll><code data-code></code></pre>
+              </div>
+              <div class="preview" data-preview aria-hidden="true">
+                <div class="pv-head pv-part" data-part="head">
+                  <b>Musterfirma</b>
+                  <span>Leistungen</span>
+                  <span>Kontakt</span>
                 </div>
-
-                <div class="tiles">
-                  <div class="tile">
-                    <span class="tile-label">Performance-Score</span>
-                    <span class="tile-value" data-count="98">0</span>
-                    <span class="tile-delta up">+59 seit Start</span>
-                  </div>
-                  <div class="tile">
-                    <span class="tile-label">Verfügbarkeit</span>
-                    <span class="tile-value"><span data-count="99.98" data-dec="2">0</span> %</span>
-                    <span class="tile-delta up">letzte 90 Tage</span>
-                  </div>
-                  <div class="tile">
-                    <span class="tile-label">Ladezeit</span>
-                    <span class="tile-value"><span data-count="0.8" data-dec="1">0</span> s</span>
-                    <span class="tile-delta up">vorher 5,2 s</span>
-                  </div>
-                  <div class="tile">
-                    <span class="tile-label">Automationen heute</span>
-                    <span class="tile-value" data-count="1284" data-live>0</span>
-                    <span class="tile-delta">Ausführungen</span>
-                  </div>
+                <div class="pv-hero">
+                  <p class="pv-title pv-part" data-part="title">Handwerk mit Herz</p>
+                  <p class="pv-text pv-part" data-part="text">Seit 1998 in Ihrer Region.</p>
+                  <span class="pv-btn pv-part" data-part="btn">Termin anfragen</span>
                 </div>
-
-                <div class="chart">
-                  <div class="chart-head">
-                    <span>Ladezeit in Sekunden</span>
-                    <span class="chart-range">Letzte 12 Wochen</span>
-                  </div>
-                  <svg class="chart-svg" viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true">
-                    <defs>
-                      <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0" stop-color="#4D7CFF" stop-opacity=".35"/>
-                        <stop offset="1" stop-color="#4D7CFF" stop-opacity="0"/>
-                      </linearGradient>
-                    </defs>
-                    <g class="chart-grid">
-                      <line x1="0" x2="600" y1="30" y2="30"/>
-                      <line x1="0" x2="600" y1="90" y2="90"/>
-                      <line x1="0" x2="600" y1="150" y2="150"/>
-                    </g>
-                    <path class="chart-area" d="M0 22 C50 26 80 30 110 44 S170 60 200 82 S260 112 300 122 S370 140 410 146 S490 152 530 154 S580 156 600 155 L600 180 L0 180Z"/>
-                    <path class="chart-line" pathLength="1" d="M0 22 C50 26 80 30 110 44 S170 60 200 82 S260 112 300 122 S370 140 410 146 S490 152 530 154 S580 156 600 155"/>
-                  </svg>
+                <div class="pv-cards">
+                  <span class="pv-part" data-part="c1">Beratung</span>
+                  <span class="pv-part" data-part="c2">Planung</span>
+                  <span class="pv-part" data-part="c3">Umsetzung</span>
                 </div>
               </div>
-
-              <aside class="dash-feed">
-                <p class="feed-title">Letzte Aktivitäten</p>
-                <ul class="feed" data-feed>
-                  <li><span class="feed-ico ok"></span><span><b>Backup erstellt</b><small>shop.beispiel.de</small></span><time>2 min</time></li>
-                  <li><span class="feed-ico blue"></span><span><b>Workflow ausgeführt</b><small>Rechnung versenden</small></span><time>5 min</time></li>
-                  <li><span class="feed-ico ok"></span><span><b>SSL erneuert</b><small>beispiel.de</small></span><time>18 min</time></li>
-                  <li><span class="feed-ico blue"></span><span><b>Cache geleert</b><small>nach Deployment</small></span><time>32 min</time></li>
-                </ul>
-              </aside>
             </div>
           </div>
         </div>
-        <p class="showcase-note">Beispielansicht: So behalten wir Websites, Server und Automationen unserer Kunden im Blick.</p>
+        <p class="showcase-note">Beispielprojekt: Aus ein paar Zeilen Code wird eine Website, die genau zu Ihrem Unternehmen passt.</p>
       </div>
     </section>
 
     <!-- Tech strip -->
-    <section class="stack" aria-label="Technologien, mit denen wir arbeiten">
-      <p class="stack-title">Wir arbeiten mit den Werkzeugen, die Ihr Unternehmen schon nutzt</p>
+    <section class="stack" aria-label="Was Sie von uns bekommen">
+      <p class="stack-title">Alles aus einer Hand</p>
       <div class="stack-mask">
         <div class="stack-track">
           <ul class="stack-list">
-            <li>Linux</li><li>Docker</li><li>Nginx</li><li>Cloudflare</li><li>WordPress</li><li>Shopify</li><li>Next.js</li><li>n8n</li><li>Make</li><li>Microsoft 365</li><li>Google Workspace</li><li>PostgreSQL</li>
+            <li>Schnelle Ladezeiten</li><li>Zuverlässiges Hosting</li><li>SSL-Verschlüsselung</li><li>Regelmäßige Backups</li><li>Updates und Wartung</li><li>Optimiert für Smartphones</li><li>Automatisierte Abläufe</li><li>Persönliche Betreuung</li>
           </ul>
           <ul class="stack-list" aria-hidden="true">
-            <li>Linux</li><li>Docker</li><li>Nginx</li><li>Cloudflare</li><li>WordPress</li><li>Shopify</li><li>Next.js</li><li>n8n</li><li>Make</li><li>Microsoft 365</li><li>Google Workspace</li><li>PostgreSQL</li>
+            <li>Schnelle Ladezeiten</li><li>Zuverlässiges Hosting</li><li>SSL-Verschlüsselung</li><li>Regelmäßige Backups</li><li>Updates und Wartung</li><li>Optimiert für Smartphones</li><li>Automatisierte Abläufe</li><li>Persönliche Betreuung</li>
           </ul>
         </div>
       </div>
@@ -202,9 +146,9 @@
             <h3>Website-Optimierung</h3>
             <p>Wir finden heraus, wo Ihre Seite Zeit verliert, und beheben die Ursachen.</p>
             <ul class="ticks">
-              <li>Core Web Vitals im grünen Bereich</li>
-              <li>Bilder, Caching und CDN</li>
-              <li>Technisches SEO</li>
+              <li>Spürbar kürzere Ladezeiten</li>
+              <li>Bilder und Dateien verkleinert</li>
+              <li>Optimiert für Smartphones</li>
             </ul>
           </article>
           <article class="card" data-reveal>
@@ -222,8 +166,8 @@
             <h3>Automationen</h3>
             <p>Wiederkehrende Arbeit übernehmen Workflows, die zuverlässig im Hintergrund laufen.</p>
             <ul class="ticks">
-              <li>n8n, Make oder eigener Code</li>
-              <li>Shop, CRM und Buchhaltung verbunden</li>
+              <li>Formulare automatisch verarbeitet</li>
+              <li>Wiederkehrende E-Mails und Dokumente</li>
               <li>Sauber dokumentiert</li>
             </ul>
           </article>
@@ -233,7 +177,7 @@
             <p>Wir ordnen gewachsene IT und machen daraus einen klaren Plan.</p>
             <ul class="ticks">
               <li>Bestandsaufnahme und Lizenzen</li>
-              <li>Microsoft 365 und Google Workspace</li>
+              <li>Einrichtung von E-Mail und Arbeitsplätzen</li>
               <li>Backup- und Sicherheitskonzepte</li>
             </ul>
           </article>
@@ -273,12 +217,12 @@
 
           <ul class="metrics">
             <li data-m="lcp">
-              <span class="m-name">Largest Contentful Paint</span>
+              <span class="m-name">Ladezeit bis Inhalt sichtbar</span>
               <span class="m-value"><span data-metric="lcp">5,2</span> s</span>
               <span class="m-bar"><span></span></span>
             </li>
             <li data-m="tbt">
-              <span class="m-name">Total Blocking Time</span>
+              <span class="m-name">Wartezeit bis bedienbar</span>
               <span class="m-value"><span data-metric="tbt">840</span> ms</span>
               <span class="m-bar"><span></span></span>
             </li>
@@ -288,7 +232,7 @@
               <span class="m-bar"><span></span></span>
             </li>
             <li data-m="req">
-              <span class="m-name">Anfragen</span>
+              <span class="m-name">Anzahl geladener Dateien</span>
               <span class="m-value"><span data-metric="req">142</span></span>
               <span class="m-bar"><span></span></span>
             </li>
@@ -305,7 +249,7 @@
           <p>Wir betreiben Ihre Website so, als wäre es unsere eigene. Wenn etwas hakt, wissen wir es vor Ihren Kunden und kümmern uns darum.</p>
           <ul class="ticks ticks-large">
             <li>SSL-Zertifikate, die sich selbst erneuern</li>
-            <li>Staging-Umgebung für Änderungen ohne Risiko</li>
+            <li>Änderungen zuerst getestet, dann live</li>
             <li>Tägliche Backups, regelmäßig getestet</li>
             <li>Persönlicher Ansprechpartner statt Ticket-Hotline</li>
           </ul>
@@ -335,7 +279,7 @@
       <div class="wrap">
         <div class="section-head center" data-reveal>
           <h2>Was sich wiederholt, wird automatisiert</h2>
-          <p>Eine Anfrage kommt über Ihre Website rein. Ohne dass jemand einen Finger rührt, landet sie im CRM, ein Angebot wird erstellt und Ihr Team weiß Bescheid.</p>
+          <p>Eine Anfrage kommt über Ihre Website rein. Ohne dass jemand einen Finger rührt, landet sie in Ihrer Kundenliste, ein Angebot wird erstellt und Ihr Team weiß Bescheid.</p>
         </div>
 
         <ol class="flow" data-reveal aria-label="Beispiel einer Automation">
@@ -347,7 +291,7 @@
           <li class="flow-link" aria-hidden="true"><span></span></li>
           <li class="flow-node">
             <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg></span>
-            <span class="flow-title">CRM-Eintrag</span>
+            <span class="flow-title">Kundenliste</span>
             <span class="flow-text">Kontakt angelegt, Daten geprüft</span>
           </li>
           <li class="flow-link" aria-hidden="true"><span></span></li>
@@ -360,7 +304,7 @@
           <li class="flow-node">
             <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></span>
             <span class="flow-title">Team informiert</span>
-            <span class="flow-text">Nachricht in Teams oder Slack</span>
+            <span class="flow-text">Benachrichtigung per E-Mail</span>
           </li>
         </ol>
       </div>

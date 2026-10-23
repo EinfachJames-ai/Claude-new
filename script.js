@@ -320,70 +320,112 @@
     });
   }
 
-  /* ==========================================================
-     Dashboard: count-ups, live feed
-     ========================================================== */
   const fmt = (v, dec) => v.toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
   const easeOutExpo = (x) => (x === 1 ? 1 : 1 - Math.pow(2, -10 * x));
 
-  function countUp(el, to, dec, dur) {
-    if (reduceMotion) { el.textContent = fmt(to, dec); return; }
-    const start = performance.now();
-    const tick = (now) => {
-      const k = easeOutExpo(Math.min((now - start) / dur, 1));
-      el.textContent = fmt(to * k, dec);
-      if (k < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
+  /* ==========================================================
+     Showcase: code is typed on the left, the site builds on the right
+     ========================================================== */
+  const CODE = [
+    { t: [['tag', '<header>']] },
+    { t: [['', '  '], ['tag', '<strong>'], ['txt', 'Musterfirma'], ['tag', '</strong>']] },
+    { t: [['', '  '], ['tag', '<nav>'], ['txt', 'Leistungen Kontakt'], ['tag', '</nav>']] },
+    { t: [['tag', '</header>']], show: 'head' },
+    { t: [] },
+    { t: [['tag', '<section '], ['attr', 'class'], ['pun', '='], ['str', '"hero"'], ['tag', '>']] },
+    { t: [['', '  '], ['tag', '<h1>'], ['txt', 'Handwerk mit Herz'], ['tag', '</h1>']], show: 'title' },
+    { t: [['', '  '], ['tag', '<p>'], ['txt', 'Seit 1998 in Ihrer Region.'], ['tag', '</p>']], show: 'text' },
+    { t: [['', '  '], ['tag', '<a '], ['attr', 'class'], ['pun', '='], ['str', '"button"'], ['tag', '>'], ['txt', 'Termin anfragen'], ['tag', '</a>']], show: 'btn' },
+    { t: [['tag', '</section>']] },
+    { t: [] },
+    { t: [['tag', '<ul '], ['attr', 'class'], ['pun', '='], ['str', '"leistungen"'], ['tag', '>']] },
+    { t: [['', '  '], ['tag', '<li>'], ['txt', 'Beratung'], ['tag', '</li>']], show: 'c1' },
+    { t: [['', '  '], ['tag', '<li>'], ['txt', 'Planung'], ['tag', '</li>']], show: 'c2' },
+    { t: [['', '  '], ['tag', '<li>'], ['txt', 'Umsetzung'], ['tag', '</li>']], show: 'c3' },
+    { t: [['tag', '</ul>']] },
+    { t: [] },
+    { t: [['tag', '<style>']] },
+    { t: [['', '  '], ['sel', '.hero'], ['pun', ' {']] },
+    { t: [['', '    '], ['prop', 'background'], ['pun', ': '], ['val', '#1d2a4d'], ['pun', ';']], cls: 'has-bg' },
+    { t: [['', '    '], ['prop', 'border-radius'], ['pun', ': '], ['val', '16px'], ['pun', ';']], cls: 'has-round' },
+    { t: [['', '  '], ['pun', '}']] },
+    { t: [['tag', '</style>']] },
+  ];
+
+  const esc = (str) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // render the first `n` characters of a line, keeping the colour of each token
+  function lineHTML(tokens, n) {
+    let out = '';
+    for (const [kind, text] of tokens) {
+      if (n <= 0) break;
+      const part = text.slice(0, n);
+      n -= part.length;
+      out += kind ? `<span class="t-${kind}">${esc(part)}</span>` : esc(part);
+    }
+    return out;
+  }
+  const lineLength = (tokens) => tokens.reduce((sum, [, text]) => sum + text.length, 0);
+
+  const codeEl = $('[data-code]');
+  const codeScroll = $('[data-code-scroll]');
+  const preview = $('[data-preview]');
+
+  function resetPreview() {
+    $$('.pv-part', preview).forEach((el) => el.classList.remove('is-shown'));
+    preview.classList.remove('has-bg', 'has-round');
+  }
+  function applyStep(line) {
+    if (line.show) $(`[data-part="${line.show}"]`, preview).classList.add('is-shown');
+    if (line.cls) preview.classList.add(line.cls);
   }
 
-  if (frame) {
-    const counters = $$('[data-count]', frame);
-    const feed = $('[data-feed]', frame);
-    const EVENTS = [
-      ['ok', 'Backup erstellt', 'shop.beispiel.de'],
-      ['blue', 'Workflow ausgeführt', 'Angebot erstellt'],
-      ['ok', 'Uptime-Check bestanden', 'api.beispiel.de'],
-      ['blue', 'Workflow ausgeführt', 'Rechnung versenden'],
-      ['ok', 'Sicherheits-Update', 'WordPress 6.x'],
-      ['blue', 'Bilder optimiert', '48 Dateien, AVIF'],
-      ['ok', 'SSL erneuert', 'beispiel.de'],
-      ['blue', 'Cache geleert', 'nach Deployment'],
-    ];
-    let ev = 0;
-    let started = false;
+  if (frame && codeEl) {
+    if (reduceMotion) {
+      codeEl.innerHTML = CODE.map((l) => `<span class="ln">${lineHTML(l.t, Infinity)}</span>`).join('');
+      CODE.forEach(applyStep);
+    } else {
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      let inView = false;
+      const waitForView = async () => { while (!inView || document.hidden) await sleep(300); };
 
-    const io = new IntersectionObserver((entries) => {
-      if (!entries[0].isIntersecting || started) return;
-      started = true;
-      frame.classList.add('is-on');
-      counters.forEach((c) => countUp(c, parseFloat(c.dataset.count), Number(c.dataset.dec || 0), 2200));
-      if (reduceMotion) return;
+      async function typeAll() {
+        codeEl.innerHTML = '';
+        resetPreview();
+        for (const line of CODE) {
+          const el = document.createElement('span');
+          el.className = 'ln is-current';
+          codeEl.appendChild(el);
+          const len = lineLength(line.t);
+          for (let i = 0; i <= len; i++) {
+            await waitForView();
+            el.innerHTML = lineHTML(line.t, i) + '<span class="caret"></span>';
+            codeScroll.scrollTop = codeScroll.scrollHeight;
+            if (i < len) await sleep(18 + Math.random() * 38);
+          }
+          applyStep(line);
+          await sleep(line.t.length ? 260 : 120);
+          el.innerHTML = lineHTML(line.t, len);
+          el.classList.remove('is-current');
+        }
+        const last = codeEl.lastElementChild;
+        last.innerHTML += '<span class="caret"></span>';
+      }
 
-      const live = $('[data-live]', frame);
-      let liveVal = Number(live.dataset.count);
-      setTimeout(() => {
-        setInterval(() => {
-          liveVal += 1 + Math.floor(Math.random() * 3);
-          live.textContent = fmt(liveVal, 0);
-        }, 2600);
-      }, 2400);
+      (async () => {
+        await waitForView();
+        frame.classList.add('is-on');
+        for (;;) {
+          await typeAll();
+          await sleep(5000);
+          preview.classList.add('is-fading');
+          await sleep(700);
+          resetPreview();
+          preview.classList.remove('is-fading');
+        }
+      })();
 
-      setInterval(() => {
-        const [kind, title, sub] = EVENTS[ev++ % EVENTS.length];
-        const li = document.createElement('li');
-        li.innerHTML = `<span class="feed-ico ${kind}"></span><span><b>${title}</b><small>${sub}</small></span><time>jetzt</time>`;
-        feed.prepend(li);
-        const items = $$('li', feed);
-        items.forEach((item, i) => {
-          if (i === 0) return;
-          const t = $('time', item);
-          if (t.textContent === 'jetzt') t.textContent = '1 min';
-        });
-        if (items.length > 6) items[items.length - 1].remove();
-      }, 3400);
-    }, { threshold: 0.25 });
-    io.observe(frame);
+      new IntersectionObserver((entries) => { inView = entries[0].isIntersecting; }, { threshold: 0.2 }).observe(frame);
+    }
   }
 
   /* ==========================================================
