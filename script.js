@@ -17,6 +17,7 @@
     uniform float uTime;
     uniform vec2 uMouse;
     uniform float uScroll;
+    uniform float uOffset;
 
     float hash(vec2 p) {
       p = fract(p * vec2(123.34, 456.21));
@@ -39,7 +40,10 @@
     void main() {
       vec2 uv = gl_FragCoord.xy / uRes;
       vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
-      float t = uTime * 0.03;
+      // the pattern travels with the page (slight parallax) instead of standing still
+      vec2 sp = p;
+      p.y -= uOffset * 0.75;
+      float t = uTime * 0.075;
 
       // domain-warped flow field
       vec2 q = vec2(fbm(p * 0.9 + vec2(0.0, t)), fbm(p * 0.9 + vec2(5.2, 1.3) - t));
@@ -49,20 +53,20 @@
 
       // silk: long folded bands with thin bright ridges
       float s = sin(p.x * 1.8 - p.y * 1.1 + f * 7.0 + t * 1.5);
-      float ridge = pow(1.0 - abs(s), 7.0);
+      float ridge = pow(1.0 - abs(s), 5.0);
       float sheen = smoothstep(0.1, 1.0, s * 0.5 + 0.5);
 
       vec3 col = vec3(0.010, 0.012, 0.024);
-      col += vec3(0.050, 0.058, 0.090) * sheen * f * 1.7;
-      col += vec3(0.30, 0.42, 0.95) * ridge * f * 0.16;
+      col += vec3(0.060, 0.070, 0.115) * sheen * f * 2.4;
+      col += vec3(0.30, 0.42, 0.95) * ridge * f * 0.34;
 
       // blue light from above, fades as the page scrolls
-      float g = exp(-length((p - vec2(0.0, 0.62)) * vec2(0.75, 1.5)) * 2.0);
+      float g = exp(-length((sp - vec2(0.0, 0.62)) * vec2(0.75, 1.5)) * 2.0);
       col += vec3(0.10, 0.20, 0.85) * g * 0.6 * (1.0 - 0.6 * uScroll);
 
       // soft light that follows the pointer
       vec2 mp = (uMouse - 0.5 * uRes) / uRes.y;
-      col += vec3(0.12, 0.22, 0.75) * exp(-length(p - mp) * 3.5) * 0.10;
+      col += vec3(0.12, 0.22, 0.75) * exp(-length(sp - mp) * 3.5) * 0.10;
 
       // vignette + dither
       col *= 1.0 - 0.6 * pow(length(uv - 0.5) * 1.2, 2.0);
@@ -106,7 +110,7 @@
       const loc = gl.getAttribLocation(prog, 'aPos');
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      ['uRes', 'uTime', 'uMouse', 'uScroll'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
+      ['uRes', 'uTime', 'uMouse', 'uScroll', 'uOffset'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
     } catch (e) {
       gl = null;
     }
@@ -129,6 +133,7 @@
     gl.uniform1f(uni.uTime, 40 + time / 1000);
     gl.uniform2f(uni.uMouse, pointer.x, pointer.y);
     gl.uniform1f(uni.uScroll, scrollMix);
+    gl.uniform1f(uni.uOffset, window.scrollY / window.innerHeight);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
