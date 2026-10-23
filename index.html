@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>JK-Unique | IT-Optimierung, Hosting & Automation</title>
   <meta name="description" content="JK-Unique optimiert, hostet und automatisiert: schnelle Websites, zuverlässiges Hosting und maßgeschneiderte Automationen für Unternehmen.">
-  <meta name="theme-color" content="#0C1826">
+  <meta name="theme-color" content="#05060B">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300..700&family=Manrope:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
-  <canvas class="landscape" aria-hidden="true"></canvas>
-  <div class="veil" aria-hidden="true"></div>
+  <!-- Animated background -->
+  <canvas class="silk" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
 
   <a class="skip" href="#inhalt">Zum Inhalt springen</a>
 
@@ -27,8 +28,9 @@
         <a href="#hosting">Hosting</a>
         <a href="#automation">Automation</a>
         <a href="#ablauf">Ablauf</a>
-        <a class="btn btn-primary btn-small" href="#kontakt">Erstgespräch vereinbaren</a>
+        <a class="btn btn-outline btn-small nav-cta-mobile" href="#kontakt">Erstgespräch vereinbaren</a>
       </nav>
+      <a class="btn btn-outline btn-small nav-cta" href="#kontakt">Erstgespräch vereinbaren</a>
       <button class="menu-toggle" aria-expanded="false" aria-controls="menu">
         <span class="sr-only">Menü öffnen</span>
         <span class="menu-icon" aria-hidden="true"></span>
@@ -39,136 +41,201 @@
   <main id="inhalt">
     <!-- Hero -->
     <section class="hero" id="top">
+      <svg class="hero-lines" aria-hidden="true"></svg>
+
+      <ul class="hero-nodes" aria-hidden="true">
+        <li style="--x:19%;--y:22%" class="left">
+          <span class="node-icon"><svg viewBox="0 0 24 24"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg></span>
+          Website-Optimierung
+        </li>
+        <li style="--x:81%;--y:22%" class="right">
+          <span class="node-icon"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/></svg></span>
+          Hosting &amp; Betrieb
+        </li>
+        <li style="--x:19%;--y:78%" class="left">
+          <span class="node-icon"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H14a4 4 0 0 1 4 4v5.5"/></svg></span>
+          Automationen
+        </li>
+        <li style="--x:81%;--y:78%" class="right">
+          <span class="node-icon"><svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V7z"/><path d="m9 12 2 2 4-4"/></svg></span>
+          IT-Beratung
+        </li>
+      </ul>
+
       <div class="wrap hero-inner">
+        <p class="badge"><span class="badge-dot" aria-hidden="true"></span>Maßgeschneiderte IT für Unternehmen</p>
         <h1 class="hero-title">
-          <span class="line"><span>Wir bringen</span></span>
-          <span class="line"><span>Ihre IT ins</span></span>
-          <span class="line"><span>Optimum.</span></span>
+          <span class="line"><span>Ihre IT, auf das</span></span>
+          <span class="line"><span>Optimum gebracht</span></span>
         </h1>
         <p class="hero-lead">
-          JK-Unique optimiert, hostet und automatisiert für Unternehmen, die keine Lösung von der Stange wollen.
-          Websites, die spürbar schneller laden. Server, die einfach laufen. Abläufe, die sich selbst erledigen.
+          JK-Unique macht Websites schneller, betreibt sie zuverlässig und automatisiert die Abläufe dahinter.
+          Keine Lösung von der Stange, sondern genau das, was Ihr Unternehmen braucht.
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#kontakt">Erstgespräch vereinbaren</a>
-          <a class="btn btn-ghost" href="#leistungen">Leistungen ansehen</a>
+          <a class="btn btn-outline" href="#leistungen">Leistungen ansehen</a>
         </div>
       </div>
+      <a class="scroll-cue" href="#dashboard" aria-label="Weiter nach unten"><span></span></a>
+    </section>
 
-      <aside class="readout" aria-label="Erklärung der Hintergrundanimation">
-        <dl class="readout-values">
-          <div><dt>Iteration</dt><dd data-ro="iter">0000</dd></div>
-          <div><dt>Funktionswert</dt><dd data-ro="value">+0.000</dd></div>
-          <div><dt>Status</dt><dd data-ro="status">sucht</dd></div>
-        </dl>
-        <p class="readout-note">Im Hintergrund sucht ein Gradientenverfahren live den tiefsten Punkt einer sich wandelnden Landschaft. Genau so gehen wir an Ihre IT heran.</p>
-      </aside>
+    <!-- Dashboard showcase -->
+    <section class="showcase" id="dashboard" aria-label="Beispielansicht unseres Monitorings">
+      <div class="cone" aria-hidden="true"></div>
+      <div class="wrap">
+        <div class="device-frame" data-tilt>
+          <div class="device">
+            <div class="device-bar" aria-hidden="true"><i></i><i></i><i></i><span>status.jk-unique.de</span></div>
+            <div class="dash">
+              <aside class="dash-side" aria-hidden="true">
+                <span class="dash-brand">JK-Unique</span>
+                <span class="dash-search">Suchen</span>
+                <span class="dash-group">Übersicht</span>
+                <span class="dash-link is-active">Dashboard</span>
+                <span class="dash-link">Websites</span>
+                <span class="dash-link">Hosting</span>
+                <span class="dash-link">Automationen</span>
+                <span class="dash-link">Berichte</span>
+                <span class="dash-group">Konto</span>
+                <span class="dash-link">Einstellungen</span>
+              </aside>
+
+              <div class="dash-main">
+                <div class="dash-head">
+                  <div>
+                    <p class="dash-title">Willkommen zurück</p>
+                    <p class="dash-sub">Alle Systeme laufen stabil.</p>
+                  </div>
+                  <span class="dash-live"><span class="live-dot" aria-hidden="true"></span>Live</span>
+                </div>
+
+                <div class="tiles">
+                  <div class="tile">
+                    <span class="tile-label">Performance-Score</span>
+                    <span class="tile-value" data-count="98">0</span>
+                    <span class="tile-delta up">+59 seit Start</span>
+                  </div>
+                  <div class="tile">
+                    <span class="tile-label">Verfügbarkeit</span>
+                    <span class="tile-value"><span data-count="99.98" data-dec="2">0</span> %</span>
+                    <span class="tile-delta up">letzte 90 Tage</span>
+                  </div>
+                  <div class="tile">
+                    <span class="tile-label">Ladezeit</span>
+                    <span class="tile-value"><span data-count="0.8" data-dec="1">0</span> s</span>
+                    <span class="tile-delta up">vorher 5,2 s</span>
+                  </div>
+                  <div class="tile">
+                    <span class="tile-label">Automationen heute</span>
+                    <span class="tile-value" data-count="1284" data-live>0</span>
+                    <span class="tile-delta">Ausführungen</span>
+                  </div>
+                </div>
+
+                <div class="chart">
+                  <div class="chart-head">
+                    <span>Ladezeit in Sekunden</span>
+                    <span class="chart-range">Letzte 12 Wochen</span>
+                  </div>
+                  <svg class="chart-svg" viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0" stop-color="#4D7CFF" stop-opacity=".35"/>
+                        <stop offset="1" stop-color="#4D7CFF" stop-opacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    <g class="chart-grid">
+                      <line x1="0" x2="600" y1="30" y2="30"/>
+                      <line x1="0" x2="600" y1="90" y2="90"/>
+                      <line x1="0" x2="600" y1="150" y2="150"/>
+                    </g>
+                    <path class="chart-area" d="M0 22 C50 26 80 30 110 44 S170 60 200 82 S260 112 300 122 S370 140 410 146 S490 152 530 154 S580 156 600 155 L600 180 L0 180Z"/>
+                    <path class="chart-line" pathLength="1" d="M0 22 C50 26 80 30 110 44 S170 60 200 82 S260 112 300 122 S370 140 410 146 S490 152 530 154 S580 156 600 155"/>
+                  </svg>
+                </div>
+              </div>
+
+              <aside class="dash-feed">
+                <p class="feed-title">Letzte Aktivitäten</p>
+                <ul class="feed" data-feed>
+                  <li><span class="feed-ico ok"></span><span><b>Backup erstellt</b><small>shop.beispiel.de</small></span><time>2 min</time></li>
+                  <li><span class="feed-ico blue"></span><span><b>Workflow ausgeführt</b><small>Rechnung versenden</small></span><time>5 min</time></li>
+                  <li><span class="feed-ico ok"></span><span><b>SSL erneuert</b><small>beispiel.de</small></span><time>18 min</time></li>
+                  <li><span class="feed-ico blue"></span><span><b>Cache geleert</b><small>nach Deployment</small></span><time>32 min</time></li>
+                </ul>
+              </aside>
+            </div>
+          </div>
+        </div>
+        <p class="showcase-note">Beispielansicht: So behalten wir Websites, Server und Automationen unserer Kunden im Blick.</p>
+      </div>
     </section>
 
     <!-- Tech strip -->
     <section class="stack" aria-label="Technologien, mit denen wir arbeiten">
-      <div class="stack-track">
-        <ul class="stack-list">
-          <li>Linux-Server</li><li>Docker</li><li>Nginx</li><li>Cloudflare</li><li>WordPress</li><li>Shopify</li><li>Next.js</li><li>n8n</li><li>Make</li><li>Microsoft 365</li><li>Google Workspace</li><li>PostgreSQL</li><li>REST-APIs</li>
-        </ul>
-        <ul class="stack-list" aria-hidden="true">
-          <li>Linux-Server</li><li>Docker</li><li>Nginx</li><li>Cloudflare</li><li>WordPress</li><li>Shopify</li><li>Next.js</li><li>n8n</li><li>Make</li><li>Microsoft 365</li><li>Google Workspace</li><li>PostgreSQL</li><li>REST-APIs</li>
-        </ul>
+      <p class="stack-title">Wir arbeiten mit den Werkzeugen, die Ihr Unternehmen schon nutzt</p>
+      <div class="stack-mask">
+        <div class="stack-track">
+          <ul class="stack-list">
+            <li>Linux</li><li>Docker</li><li>Nginx</li><li>Cloudflare</li><li>WordPress</li><li>Shopify</li><li>Next.js</li><li>n8n</li><li>Make</li><li>Microsoft 365</li><li>Google Workspace</li><li>PostgreSQL</li>
+          </ul>
+          <ul class="stack-list" aria-hidden="true">
+            <li>Linux</li><li>Docker</li><li>Nginx</li><li>Cloudflare</li><li>WordPress</li><li>Shopify</li><li>Next.js</li><li>n8n</li><li>Make</li><li>Microsoft 365</li><li>Google Workspace</li><li>PostgreSQL</li>
+          </ul>
+        </div>
       </div>
     </section>
 
     <!-- Leistungen -->
     <section class="section" id="leistungen">
-      <div class="wrap">
-        <div class="section-head" data-reveal>
-          <h2>Was wir für Sie tun</h2>
-          <p>Vier Bereiche, ein Anspruch: Wir bauen nur, was zu Ihrem Unternehmen passt. Klicken Sie auf einen Bereich, um zu sehen, was konkret dahintersteckt.</p>
+      <div class="wrap services-layout">
+        <div class="services-intro" data-reveal>
+          <h2>Was wir für Ihr Unternehmen tun</h2>
+          <p>Vier Bereiche, ein Anspruch: Wir bauen nur, was zu Ihrem Unternehmen passt, und messen, ob es wirkt.</p>
+          <a class="btn btn-outline" href="#kontakt">Projekt besprechen</a>
         </div>
 
-        <div class="services" data-reveal>
-          <article class="service">
-            <h3>
-              <button class="service-toggle" aria-expanded="true" aria-controls="s1">
-                <span class="service-name">Website-Optimierung</span>
-                <span class="service-short">Ladezeit, Core Web Vitals, technisches SEO</span>
-                <span class="plus" aria-hidden="true"></span>
-              </button>
-            </h3>
-            <div class="service-body" id="s1">
-              <div class="service-body-inner">
-                <p>Wir messen, wo Ihre Website Zeit verliert, und beheben die Ursachen statt der Symptome. Das Ergebnis sind Seiten, die Besucher halten und bei Google besser dastehen.</p>
-                <ul class="ticks">
-                  <li>Bilder in modernen Formaten wie AVIF und WebP, richtig skaliert</li>
-                  <li>Caching-Strategien und CDN-Auslieferung</li>
-                  <li>Unnötige Skripte, Plugins und Tracker entfernen</li>
-                  <li>Core Web Vitals: LCP, INP und CLS in den grünen Bereich</li>
-                  <li>Technisches SEO und Barrierefreiheit</li>
-                </ul>
-              </div>
-            </div>
+        <div class="cards">
+          <article class="card" data-reveal>
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg></span>
+            <h3>Website-Optimierung</h3>
+            <p>Wir finden heraus, wo Ihre Seite Zeit verliert, und beheben die Ursachen.</p>
+            <ul class="ticks">
+              <li>Core Web Vitals im grünen Bereich</li>
+              <li>Bilder, Caching und CDN</li>
+              <li>Technisches SEO</li>
+            </ul>
           </article>
-
-          <article class="service">
-            <h3>
-              <button class="service-toggle" aria-expanded="false" aria-controls="s2">
-                <span class="service-name">Hosting &amp; Betrieb</span>
-                <span class="service-short">Schnelle Server, überwacht und gewartet</span>
-                <span class="plus" aria-hidden="true"></span>
-              </button>
-            </h3>
-            <div class="service-body" id="s2">
-              <div class="service-body-inner">
-                <p>Ihre Website läuft auf einer Umgebung, die wir für genau dieses Projekt einrichten und dauerhaft betreuen. Sie haben einen festen Ansprechpartner, der Ihr System kennt.</p>
-                <ul class="ticks">
-                  <li>Server-Setup abgestimmt auf Ihre Anwendung</li>
-                  <li>Tägliche Backups mit regelmäßigem Wiederherstellungstest</li>
-                  <li>Updates und Sicherheits-Patches ohne Ausfallzeit</li>
-                  <li>Monitoring rund um die Uhr mit Alarmierung</li>
-                </ul>
-              </div>
-            </div>
+          <article class="card" data-reveal>
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/></svg></span>
+            <h3>Hosting &amp; Betrieb</h3>
+            <p>Server, die wir für Ihr Projekt einrichten und dauerhaft betreuen.</p>
+            <ul class="ticks">
+              <li>Tägliche Backups</li>
+              <li>Updates und Sicherheits-Patches</li>
+              <li>Monitoring mit Alarmierung</li>
+            </ul>
           </article>
-
-          <article class="service">
-            <h3>
-              <button class="service-toggle" aria-expanded="false" aria-controls="s3">
-                <span class="service-name">Automationen</span>
-                <span class="service-short">Wiederkehrende Arbeit an Maschinen abgeben</span>
-                <span class="plus" aria-hidden="true"></span>
-              </button>
-            </h3>
-            <div class="service-body" id="s3">
-              <div class="service-body-inner">
-                <p>Wir verbinden die Tools, die Sie schon nutzen, und lassen Daten selbstständig fließen. Keine Copy-and-paste-Arbeit mehr zwischen Formular, CRM und Buchhaltung.</p>
-                <ul class="ticks">
-                  <li>Workflows mit n8n, Make oder eigenem Code</li>
-                  <li>Schnittstellen zwischen Shop, CRM, ERP und Buchhaltung</li>
-                  <li>Automatische Berichte, Angebote und Benachrichtigungen</li>
-                  <li>Dokumentiert, damit Ihr Team versteht, was passiert</li>
-                </ul>
-              </div>
-            </div>
+          <article class="card" data-reveal>
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H14a4 4 0 0 1 4 4v5.5"/></svg></span>
+            <h3>Automationen</h3>
+            <p>Wiederkehrende Arbeit übernehmen Workflows, die zuverlässig im Hintergrund laufen.</p>
+            <ul class="ticks">
+              <li>n8n, Make oder eigener Code</li>
+              <li>Shop, CRM und Buchhaltung verbunden</li>
+              <li>Sauber dokumentiert</li>
+            </ul>
           </article>
-
-          <article class="service">
-            <h3>
-              <button class="service-toggle" aria-expanded="false" aria-controls="s4">
-                <span class="service-name">IT-Beratung</span>
-                <span class="service-short">Systeme, Sicherheit und Arbeitsplätze ordnen</span>
-                <span class="plus" aria-hidden="true"></span>
-              </button>
-            </h3>
-            <div class="service-body" id="s4">
-              <div class="service-body-inner">
-                <p>Gewachsene IT ist selten effizient. Wir schauen uns Ihre Landschaft an, finden Doppelungen und Lücken und machen daraus einen klaren Plan.</p>
-                <ul class="ticks">
-                  <li>Bestandsaufnahme von Software, Lizenzen und Zugängen</li>
-                  <li>Einrichtung von Microsoft 365 oder Google Workspace</li>
-                  <li>Backup- und Sicherheitskonzepte</li>
-                  <li>Begleitung bei Tool-Auswahl und Migration</li>
-                </ul>
-              </div>
-            </div>
+          <article class="card" data-reveal>
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V7z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <h3>IT-Beratung</h3>
+            <p>Wir ordnen gewachsene IT und machen daraus einen klaren Plan.</p>
+            <ul class="ticks">
+              <li>Bestandsaufnahme und Lizenzen</li>
+              <li>Microsoft 365 und Google Workspace</li>
+              <li>Backup- und Sicherheitskonzepte</li>
+            </ul>
           </article>
         </div>
       </div>
@@ -180,7 +247,7 @@
         <div class="split-text" data-reveal>
           <h2>Jede Millisekunde zählt</h2>
           <p>Langsame Seiten kosten Besucher, Ranking und Umsatz. Wir messen mit denselben Werkzeugen wie Google, finden die Bremsen und lösen sie, bis die Zahlen stimmen.</p>
-          <p>Schalten Sie rechts zwischen Vorher und Nachher um und sehen Sie, wie sich eine gründliche Optimierung in den Kennzahlen zeigt.</p>
+          <p>Schalten Sie zwischen Vorher und Nachher um und sehen Sie, wie sich eine gründliche Optimierung in den Kennzahlen zeigt.</p>
         </div>
 
         <div class="panel perf" data-reveal>
@@ -190,7 +257,7 @@
               <button class="switch-btn" aria-pressed="false" data-state="after">Nachher</button>
               <span class="switch-thumb" aria-hidden="true"></span>
             </div>
-            <span class="perf-note">Beispielwerte</span>
+            <span class="note">Beispielwerte</span>
           </div>
 
           <div class="gauge">
@@ -246,8 +313,8 @@
 
         <div class="panel status" data-reveal>
           <div class="status-head">
-            <span class="status-title"><span class="dot" aria-hidden="true"></span>Alle Systeme laufen</span>
-            <span class="perf-note">Demo-Ansicht</span>
+            <span class="status-title"><span class="live-dot" aria-hidden="true"></span>Alle Systeme laufen</span>
+            <span class="note">Demo-Ansicht</span>
           </div>
           <ul class="status-rows">
             <li><span class="s-name">Website</span><span class="s-ms" data-base="86">86 ms</span><span class="s-bars"></span></li>
@@ -266,40 +333,32 @@
     <!-- Automation -->
     <section class="section" id="automation">
       <div class="wrap">
-        <div class="section-head" data-reveal>
+        <div class="section-head center" data-reveal>
           <h2>Was sich wiederholt, wird automatisiert</h2>
-          <p>Ein Beispiel aus dem Alltag: Eine Anfrage kommt über Ihre Website rein. Ohne dass jemand einen Finger rührt, landet sie im CRM, ein Angebot wird erstellt und Ihr Team weiß Bescheid.</p>
+          <p>Eine Anfrage kommt über Ihre Website rein. Ohne dass jemand einen Finger rührt, landet sie im CRM, ein Angebot wird erstellt und Ihr Team weiß Bescheid.</p>
         </div>
 
         <ol class="flow" data-reveal aria-label="Beispiel einer Automation">
           <li class="flow-node">
-            <span class="flow-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg>
-            </span>
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg></span>
             <span class="flow-title">Anfrage</span>
             <span class="flow-text">Kontaktformular auf Ihrer Website</span>
           </li>
           <li class="flow-link" aria-hidden="true"><span></span></li>
           <li class="flow-node">
-            <span class="flow-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg>
-            </span>
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg></span>
             <span class="flow-title">CRM-Eintrag</span>
             <span class="flow-text">Kontakt angelegt, Daten geprüft</span>
           </li>
           <li class="flow-link" aria-hidden="true"><span></span></li>
           <li class="flow-node">
-            <span class="flow-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg>
-            </span>
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg></span>
             <span class="flow-title">Angebot</span>
             <span class="flow-text">PDF aus Ihrer Vorlage erzeugt</span>
           </li>
           <li class="flow-link" aria-hidden="true"><span></span></li>
           <li class="flow-node">
-            <span class="flow-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg>
-            </span>
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></span>
             <span class="flow-title">Team informiert</span>
             <span class="flow-text">Nachricht in Teams oder Slack</span>
           </li>
@@ -310,16 +369,16 @@
     <!-- Haltung -->
     <section class="section manifesto-section" aria-label="Unsere Haltung">
       <div class="wrap">
-        <p class="manifesto" data-manifesto>Keine Baukästen. Keine Standardpakete, die nur halb passen. Wir schauen uns an, wie Ihr Unternehmen wirklich arbeitet, und bauen genau das, was Sie weiterbringt: messbar schneller, sicherer und mit weniger Handarbeit.</p>
+        <p class="manifesto" data-manifesto>Keine Baukästen. Keine Standardpakete, die nur halb passen. Wir schauen uns an, wie Ihr Unternehmen wirklich arbeitet, und bauen genau das, was Sie weiterbringt.</p>
       </div>
     </section>
 
     <!-- Ablauf -->
     <section class="section" id="ablauf">
       <div class="wrap">
-        <div class="section-head" data-reveal>
+        <div class="section-head center" data-reveal>
           <h2>So arbeiten wir zusammen</h2>
-          <p>Vom ersten Gespräch bis zum laufenden Betrieb wissen Sie zu jedem Zeitpunkt, woran wir arbeiten und warum.</p>
+          <p>Vom ersten Gespräch bis zum laufenden Betrieb wissen Sie jederzeit, woran wir arbeiten und warum.</p>
         </div>
 
         <ol class="steps" data-steps>
@@ -361,6 +420,7 @@
 
     <!-- Kontakt -->
     <section class="section contact" id="kontakt">
+      <div class="cone cone-low" aria-hidden="true"></div>
       <div class="wrap split">
         <div class="split-text" data-reveal>
           <h2>Lassen Sie uns über Ihr Projekt sprechen</h2>
@@ -405,7 +465,7 @@
 
   <footer class="footer">
     <div class="wrap footer-inner">
-      <span class="wordmark wordmark-small">JK-Unique</span>
+      <span class="wordmark">JK-Unique</span>
       <span>IT-Optimierung, Hosting und Automation</span>
       <nav aria-label="Rechtliches">
         <a href="#">Impressum</a>

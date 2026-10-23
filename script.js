@@ -5,299 +5,193 @@
   const finePointer = window.matchMedia('(pointer: fine)').matches;
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-
-  /* ==========================================================
-     Perlin noise (improved noise, 3D)
-     ========================================================== */
-  const perm = new Uint8Array(512);
-  {
-    const p = Array.from({ length: 256 }, (_, i) => i);
-    let seed = 1337;
-    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-    for (let i = 255; i > 0; i--) {
-      const j = Math.floor(rnd() * (i + 1));
-      [p[i], p[j]] = [p[j], p[i]];
-    }
-    for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
-  }
-  const fade = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+  const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
   const lerp = (a, b, t) => a + t * (b - a);
-  const grad = (h, x, y, z) => {
-    h &= 15;
-    const u = h < 8 ? x : y;
-    const v = h < 4 ? y : (h === 12 || h === 14 ? x : z);
-    return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
-  };
-  function noise(x, y, z) {
-    const fx = Math.floor(x), fy = Math.floor(y), fz = Math.floor(z);
-    const X = fx & 255, Y = fy & 255, Z = fz & 255;
-    x -= fx; y -= fy; z -= fz;
-    const u = fade(x), v = fade(y), w = fade(z);
-    const A = perm[X] + Y, AA = perm[A] + Z, AB = perm[A + 1] + Z;
-    const B = perm[X + 1] + Y, BA = perm[B] + Z, BB = perm[B + 1] + Z;
-    return lerp(
-      lerp(lerp(grad(perm[AA], x, y, z), grad(perm[BA], x - 1, y, z), u),
-           lerp(grad(perm[AB], x, y - 1, z), grad(perm[BB], x - 1, y - 1, z), u), v),
-      lerp(lerp(grad(perm[AA + 1], x, y, z - 1), grad(perm[BA + 1], x - 1, y, z - 1), u),
-           lerp(grad(perm[AB + 1], x, y - 1, z - 1), grad(perm[BB + 1], x - 1, y - 1, z - 1), u), v),
-      w);
+
+  /* ==========================================================
+     Animated background: slow silk waves (WebGL)
+     ========================================================== */
+  const FRAG = `
+    precision mediump float;
+    uniform vec2 uRes;
+    uniform float uTime;
+    uniform vec2 uMouse;
+    uniform float uScroll;
+
+    float hash(vec2 p) {
+      p = fract(p * vec2(123.34, 456.21));
+      p += dot(p, p + 45.32);
+      return fract(p.x * p.y);
+    }
+    float noise(vec2 p) {
+      vec2 i = floor(p), f = fract(p);
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+                 mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+    }
+    float fbm(vec2 p) {
+      float v = 0.0, a = 0.5;
+      mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
+      for (int i = 0; i < 5; i++) { v += a * noise(p); p = m * p; a *= 0.5; }
+      return v;
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / uRes;
+      vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
+      float t = uTime * 0.03;
+
+      // domain-warped flow field
+      vec2 q = vec2(fbm(p * 0.9 + vec2(0.0, t)), fbm(p * 0.9 + vec2(5.2, 1.3) - t));
+      vec2 r = vec2(fbm(p + 2.6 * q + vec2(1.7, 9.2) + 0.6 * t),
+                    fbm(p + 2.6 * q + vec2(8.3, 2.8) - 0.4 * t));
+      float f = fbm(p * 0.8 + 1.8 * r);
+
+      // silk: long folded bands with thin bright ridges
+      float s = sin(p.x * 1.8 - p.y * 1.1 + f * 7.0 + t * 1.5);
+      float ridge = pow(1.0 - abs(s), 7.0);
+      float sheen = smoothstep(0.1, 1.0, s * 0.5 + 0.5);
+
+      vec3 col = vec3(0.010, 0.012, 0.024);
+      col += vec3(0.050, 0.058, 0.090) * sheen * f * 1.7;
+      col += vec3(0.30, 0.42, 0.95) * ridge * f * 0.16;
+
+      // blue light from above, fades as the page scrolls
+      float g = exp(-length((p - vec2(0.0, 0.62)) * vec2(0.75, 1.5)) * 2.0);
+      col += vec3(0.10, 0.20, 0.85) * g * 0.6 * (1.0 - 0.6 * uScroll);
+
+      // soft light that follows the pointer
+      vec2 mp = (uMouse - 0.5 * uRes) / uRes.y;
+      col += vec3(0.12, 0.22, 0.75) * exp(-length(p - mp) * 3.5) * 0.10;
+
+      // vignette + dither
+      col *= 1.0 - 0.6 * pow(length(uv - 0.5) * 1.2, 2.0);
+      col += (hash(gl_FragCoord.xy + fract(uTime)) - 0.5) * 0.012;
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `;
+  const VERT = `
+    attribute vec2 aPos;
+    void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+  `;
+
+  const canvas = $('.silk');
+  let RES_SCALE = 0.55;
+  let gl = null, uni = {};
+  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+  let scrollMix = 0;
+
+  try {
+    gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
+  } catch (e) { gl = null; }
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  }
+
+  if (gl) {
+    try {
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, 'aPos');
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      ['uRes', 'uTime', 'uMouse', 'uScroll'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
+    } catch (e) {
+      gl = null;
+    }
+  }
+
+  function sizeCanvas() {
+    const w = Math.max(1, Math.round(window.innerWidth * RES_SCALE));
+    const h = Math.max(1, Math.round(window.innerHeight * RES_SCALE));
+    canvas.width = w;
+    canvas.height = h;
+    if (gl) gl.viewport(0, 0, w, h);
+    pointer.tx = pointer.x = w * 0.5;
+    pointer.ty = pointer.y = h * 0.75;
+  }
+
+  function render(time) {
+    pointer.x += (pointer.tx - pointer.x) * 0.04;
+    pointer.y += (pointer.ty - pointer.y) * 0.04;
+    gl.uniform2f(uni.uRes, canvas.width, canvas.height);
+    gl.uniform1f(uni.uTime, 40 + time / 1000);
+    gl.uniform2f(uni.uMouse, pointer.x, pointer.y);
+    gl.uniform1f(uni.uScroll, scrollMix);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  if (gl) {
+    sizeCanvas();
+    let visible = true;
+    document.addEventListener('visibilitychange', () => { visible = !document.hidden; });
+    if (reduceMotion) {
+      render(0);
+    } else {
+      // drop internal resolution on slow devices so motion stays fluid
+      let prev = 0, slow = 0, samples = 0;
+      const loop = (now) => {
+        requestAnimationFrame(loop);
+        if (!visible) { prev = 0; return; }
+        if (prev && RES_SCALE > 0.3) {
+          samples++;
+          if (now - prev > 26) slow++;
+          if (samples === 90) {
+            if (slow > 45) { RES_SCALE = Math.max(0.3, RES_SCALE - 0.1); sizeCanvas(); }
+            samples = slow = 0;
+          }
+        }
+        prev = now;
+        render(now);
+      };
+      requestAnimationFrame(loop);
+    }
+    let rt;
+    window.addEventListener('resize', () => {
+      clearTimeout(rt);
+      rt = setTimeout(() => { sizeCanvas(); if (reduceMotion) render(0); }, 120);
+    });
+    if (finePointer && !reduceMotion) {
+      window.addEventListener('pointermove', (e) => {
+        pointer.tx = e.clientX * RES_SCALE;
+        pointer.ty = (window.innerHeight - e.clientY) * RES_SCALE;
+      }, { passive: true });
+    }
   }
 
   /* ==========================================================
-     Contour landscape with gradient descent
+     Hero connector lines (drawn in pixels so dashes stay crisp)
      ========================================================== */
-  const canvas = $('.landscape');
-  const ctx = canvas.getContext('2d');
-  const readout = {
-    iter: $('[data-ro="iter"]'),
-    value: $('[data-ro="value"]'),
-    status: $('[data-ro="status"]'),
-  };
-
-  const SCALE = 1 / 440;
-  const LEVEL_MIN = -0.95, LEVEL_MAX = 0.95, LEVEL_STEP = 0.075;
-  const LEVELS = [];
-  for (let l = LEVEL_MIN; l <= LEVEL_MAX + 1e-6; l += LEVEL_STEP) LEVELS.push(l);
-
-  let W = 0, H = 0, dpr = 1, cell = 16, cols = 0, rows = 0, grid = null;
-  let t = 0;
-  const mouse = { x: 0, y: 0, tx: 0, ty: 0, strength: 0, target: 0 };
-
-  function field(x, y) {
-    let v = noise(x * SCALE, y * SCALE, t) +
-            0.45 * noise(x * SCALE * 2.1 + 31.7, y * SCALE * 2.1 - 12.3, t * 1.4 + 5);
-    // gentle bias so the deepest valleys tend to sit right of the headline
-    v += 0.18 * ((x / W) * -1 + 0.5);
-    if (mouse.strength > 0.001) {
-      const dx = x - mouse.x, dy = y - mouse.y;
-      v -= 0.5 * mouse.strength * Math.exp(-(dx * dx + dy * dy) / 52000);
-    }
-    return v;
+  const heroLines = $('.hero-lines');
+  const LINES = [
+    [[19, 22], [24, 22], [29, 31]],
+    [[81, 22], [76, 22], [71, 31]],
+    [[19, 78], [24, 78], [29, 69]],
+    [[81, 78], [76, 78], [71, 69]],
+  ];
+  function drawHeroLines() {
+    const w = heroLines.clientWidth, h = heroLines.clientHeight;
+    if (!w || !h) return;
+    heroLines.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    const d = LINES.map((pts) => pts.map(([x, y], i) => `${i ? 'L' : 'M'}${(x / 100 * w).toFixed(1)} ${(y / 100 * h).toFixed(1)}`).join(' '));
+    heroLines.innerHTML =
+      d.map((p) => `<path class="hl" d="${p}"/>`).join('') +
+      d.map((p) => `<path class="hl-pulse" pathLength="100" d="${p}"/>`).join('');
   }
-
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 1.75);
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = Math.round(W * dpr);
-    canvas.height = Math.round(H * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cell = W < 700 ? 20 : 16;
-    cols = Math.ceil(W / cell) + 1;
-    rows = Math.ceil(H / cell) + 1;
-    grid = new Float32Array(cols * rows);
-  }
-
-  function sampleGrid() {
-    for (let j = 0; j < rows; j++) {
-      for (let i = 0; i < cols; i++) {
-        grid[j * cols + i] = field(i * cell, j * cell);
-      }
-    }
-  }
-
-  // Marching squares: segments for one cell and one level
-  function addSegments(path, L, x0, y0, a, b, c, d) {
-    const idx = (a > L ? 8 : 0) | (b > L ? 4 : 0) | (c > L ? 2 : 0) | (d > L ? 1 : 0);
-    if (idx === 0 || idx === 15) return;
-    const s = cell;
-    const top = () => [x0 + s * (L - a) / (b - a), y0];
-    const right = () => [x0 + s, y0 + s * (L - b) / (c - b)];
-    const bottom = () => [x0 + s * (L - d) / (c - d), y0 + s];
-    const left = () => [x0, y0 + s * (L - a) / (d - a)];
-    const seg = (p, q) => { path.moveTo(p[0], p[1]); path.lineTo(q[0], q[1]); };
-    switch (idx) {
-      case 1: case 14: seg(left(), bottom()); break;
-      case 2: case 13: seg(bottom(), right()); break;
-      case 3: case 12: seg(left(), right()); break;
-      case 4: case 11: seg(top(), right()); break;
-      case 6: case 9: seg(top(), bottom()); break;
-      case 7: case 8: seg(top(), left()); break;
-      case 5: seg(top(), left()); seg(bottom(), right()); break;
-      case 10: seg(top(), right()); seg(left(), bottom()); break;
-    }
-  }
-
-  /* Descent particle */
-  const P = { x: 0, y: 0, vx: 0, vy: 0, iter: 0, still: 0, done: 0, trail: [], value: 0 };
-
-  function spawn() {
-    let best = null;
-    for (let k = 0; k < 14; k++) {
-      const x = W * (0.3 + Math.random() * 0.65);
-      const y = H * (0.08 + Math.random() * 0.8);
-      const v = field(x, y);
-      if (!best || v > best.v) best = { x, y, v };
-    }
-    Object.assign(P, { x: best.x, y: best.y, vx: 0, vy: 0, iter: 0, still: 0, done: 0, trail: [] });
-  }
-
-  function stepParticle() {
-    if (P.done > 0) {
-      P.done++;
-      if (P.done > 110) spawn();
-      return;
-    }
-    const h = 3;
-    const gx = (field(P.x + h, P.y) - field(P.x - h, P.y)) / (2 * h);
-    const gy = (field(P.x, P.y + h) - field(P.x, P.y - h)) / (2 * h);
-    P.vx = P.vx * 0.9 - gx * 900;
-    P.vy = P.vy * 0.9 - gy * 900;
-    const sp = Math.hypot(P.vx, P.vy);
-    const max = 3.2;
-    if (sp > max) { P.vx *= max / sp; P.vy *= max / sp; }
-    P.x += P.vx;
-    P.y += P.vy;
-    P.iter++;
-    P.value = field(P.x, P.y);
-    P.trail.push(P.x, P.y);
-    if (P.trail.length > 360) P.trail.splice(0, 2);
-    P.still = sp < 0.09 ? P.still + 1 : 0;
-    const outside = P.x < -40 || P.y < -40 || P.x > W + 40 || P.y > H + 40;
-    if (outside) spawn();
-    else if (P.still > 45 || P.iter > 1400) P.done = 1;
-  }
-
-  function drawParticle() {
-    const tr = P.trail;
-    const n = tr.length / 2;
-    if (n > 1) {
-      ctx.lineCap = 'round';
-      ctx.lineWidth = 1.6;
-      for (let i = 1; i < n; i++) {
-        const a = i / n;
-        ctx.strokeStyle = `rgba(255, 182, 72, ${a * 0.85})`;
-        ctx.beginPath();
-        ctx.moveTo(tr[(i - 1) * 2], tr[(i - 1) * 2 + 1]);
-        ctx.lineTo(tr[i * 2], tr[i * 2 + 1]);
-        ctx.stroke();
-      }
-    }
-    const glow = ctx.createRadialGradient(P.x, P.y, 0, P.x, P.y, 28);
-    glow.addColorStop(0, 'rgba(255, 182, 72, 0.55)');
-    glow.addColorStop(1, 'rgba(255, 182, 72, 0)');
-    ctx.fillStyle = glow;
-    ctx.beginPath();
-    ctx.arc(P.x, P.y, 28, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#FFB648';
-    ctx.beginPath();
-    ctx.arc(P.x, P.y, 3.6, 0, Math.PI * 2);
-    ctx.fill();
-
-    if (P.done > 0) {
-      const k = Math.min(P.done / 60, 1);
-      ctx.strokeStyle = `rgba(99, 224, 182, ${0.8 * (1 - k)})`;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(P.x, P.y, 6 + k * 40, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-  }
-
-  function draw(withParticle) {
-    sampleGrid();
-    ctx.clearRect(0, 0, W, H);
-
-    const minor = new Path2D();
-    const major = new Path2D();
-    const near = new Path2D();
-    let nearLevel = null;
-    if (withParticle) {
-      nearLevel = LEVELS.reduce((best, l) => Math.abs(l - P.value) < Math.abs(best - P.value) ? l : best, LEVELS[0]);
-    }
-
-    for (let j = 0; j < rows - 1; j++) {
-      for (let i = 0; i < cols - 1; i++) {
-        const a = grid[j * cols + i];
-        const b = grid[j * cols + i + 1];
-        const c = grid[(j + 1) * cols + i + 1];
-        const d = grid[(j + 1) * cols + i];
-        const lo = Math.min(a, b, c, d), hi = Math.max(a, b, c, d);
-        const x0 = i * cell, y0 = j * cell;
-        for (let k = 0; k < LEVELS.length; k++) {
-          const L = LEVELS[k];
-          if (L < lo || L > hi) continue;
-          const target = L === nearLevel ? near : (k % 4 === 0 ? major : minor);
-          addSegments(target, L, x0, y0, a, b, c, d);
-        }
-      }
-    }
-
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(141, 162, 184, 0.13)';
-    ctx.stroke(minor);
-    ctx.strokeStyle = 'rgba(141, 162, 184, 0.3)';
-    ctx.stroke(major);
-    if (withParticle) {
-      ctx.strokeStyle = 'rgba(255, 182, 72, 0.32)';
-      ctx.lineWidth = 1.2;
-      ctx.stroke(near);
-      drawParticle();
-    }
-  }
-
-  function updateReadout() {
-    readout.iter.textContent = String(P.iter).padStart(4, '0');
-    const v = P.value;
-    readout.value.textContent = (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(3);
-    readout.status.textContent = P.done > 0 ? 'Minimum' : 'sucht';
-    readout.status.style.color = P.done > 0 ? 'var(--mint)' : '';
-  }
-
-  let last = 0, frame = 0, running = true;
-  function loop(now) {
-    requestAnimationFrame(loop);
-    if (!running) return;
-    const dt = now - last;
-    if (dt < 32) return; // ~30 fps is plenty for slow motion
-    last = now;
-    t += Math.min(dt, 100) * 0.000028;
-
-    mouse.x += (mouse.tx - mouse.x) * 0.06;
-    mouse.y += (mouse.ty - mouse.y) * 0.06;
-    mouse.strength += (mouse.target - mouse.strength) * 0.03;
-
-    stepParticle();
-    stepParticle();
-    draw(true);
-    if (++frame % 4 === 0) updateReadout();
-  }
-
-  resize();
-  if (reduceMotion) {
-    t = 3.7;
-    draw(false);
-    readout.iter.textContent = '–';
-    readout.value.textContent = '–';
-    readout.status.textContent = 'pausiert';
-  } else {
-    spawn();
-    requestAnimationFrame(loop);
-  }
-
-  let resizeTimer;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      resize();
-      if (reduceMotion) draw(false);
-      else if (P.x > W || P.y > H) spawn();
-    }, 120);
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    running = !document.hidden;
-  });
-
-  if (finePointer && !reduceMotion) {
-    window.addEventListener('pointermove', (e) => {
-      mouse.tx = e.clientX;
-      mouse.ty = e.clientY;
-      if (mouse.target === 0) { mouse.x = e.clientX; mouse.y = e.clientY; }
-      mouse.target = 1;
-    }, { passive: true });
-    document.documentElement.addEventListener('pointerleave', () => { mouse.target = 0; });
+  if (heroLines) {
+    drawHeroLines();
+    window.addEventListener('resize', drawHeroLines);
   }
 
   /* ==========================================================
@@ -331,9 +225,9 @@
   /* ==========================================================
      Scroll-driven effects
      ========================================================== */
-  const hero = $('.hero');
+  const frame = $('[data-tilt]');
   const steps = $('[data-steps]');
-  const stepItems = $$('.step', steps);
+  const stepItems = steps ? $$('.step', steps) : [];
   const manifesto = $('[data-manifesto]');
   let words = [];
 
@@ -355,17 +249,13 @@
     const vh = window.innerHeight;
 
     nav.classList.toggle('is-solid', y > 24);
-    const goingDown = y > lastY + 4;
-    const goingUp = y < lastY - 4;
     if (!menu.classList.contains('is-open')) {
-      if (goingDown && y > vh * 0.6) nav.classList.add('is-hidden');
-      else if (goingUp) nav.classList.remove('is-hidden');
+      if (y > lastY + 4 && y > vh * 0.8) nav.classList.add('is-hidden');
+      else if (y < lastY - 4) nav.classList.remove('is-hidden');
     }
     lastY = y;
+    scrollMix = clamp(y / vh, 0, 1);
 
-    document.body.classList.toggle('past-hero', y > hero.offsetHeight * 0.55);
-
-    // current section in nav
     let current = null;
     sections.forEach((s, i) => {
       const r = s.getBoundingClientRect();
@@ -373,29 +263,30 @@
     });
     navLinks.forEach((a) => a.classList.toggle('is-current', a === current));
 
-    // manifesto: light up words as the paragraph moves through the viewport
+    if (frame && !reduceMotion) {
+      const r = frame.getBoundingClientRect();
+      const tilt = clamp((r.top - vh * 0.12) / (vh * 0.7), 0, 1);
+      frame.style.setProperty('--tilt', tilt.toFixed(4));
+    }
+
     if (words.length && !reduceMotion) {
       const r = manifesto.getBoundingClientRect();
-      const p = Math.min(Math.max((vh * 0.85 - r.top) / (r.height + vh * 0.35), 0), 1);
+      const p = clamp((vh * 0.85 - r.top) / (r.height + vh * 0.35), 0, 1);
       const lit = Math.round(p * words.length);
       words.forEach((w, i) => w.classList.toggle('on', i < lit));
     }
 
-    // process timeline progress
     if (steps) {
       const r = steps.getBoundingClientRect();
-      const p = Math.min(Math.max((vh * 0.6 - r.top) / r.height, 0), 1);
-      steps.style.setProperty('--progress', p.toFixed(4));
-      stepItems.forEach((s) => {
-        const sr = s.getBoundingClientRect();
-        s.classList.toggle('is-active', sr.top + 28 < vh * 0.6);
-      });
+      steps.style.setProperty('--progress', clamp((vh * 0.6 - r.top) / r.height, 0, 1).toFixed(4));
+      stepItems.forEach((s) => s.classList.toggle('is-active', s.getBoundingClientRect().top + 26 < vh * 0.6));
     }
   }
 
   window.addEventListener('scroll', () => {
     if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
   }, { passive: true });
+  window.addEventListener('resize', onScroll);
   onScroll();
 
   /* ==========================================================
@@ -408,21 +299,87 @@
       revealIO.unobserve(e.target);
       e.target.dispatchEvent(new CustomEvent('reveal'));
     });
-  }, { threshold: 0.18, rootMargin: '0px 0px -6% 0px' });
+  }, { threshold: 0.15, rootMargin: '0px 0px -6% 0px' });
   $$('[data-reveal]').forEach((el) => revealIO.observe(el));
 
   /* ==========================================================
-     Services accordion
+     Card spotlight
      ========================================================== */
-  $$('.service-toggle').forEach((btn) => {
-    const body = document.getElementById(btn.getAttribute('aria-controls'));
-    if (btn.getAttribute('aria-expanded') === 'true') body.classList.add('is-open');
-    btn.addEventListener('click', () => {
-      const open = btn.getAttribute('aria-expanded') !== 'true';
-      btn.setAttribute('aria-expanded', String(open));
-      body.classList.toggle('is-open', open);
+  if (finePointer) {
+    $$('.card').forEach((card) => {
+      card.addEventListener('pointermove', (e) => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+        card.style.setProperty('--my', `${e.clientY - r.top}px`);
+      });
     });
-  });
+  }
+
+  /* ==========================================================
+     Dashboard: count-ups, live feed
+     ========================================================== */
+  const fmt = (v, dec) => v.toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  const easeOutExpo = (x) => (x === 1 ? 1 : 1 - Math.pow(2, -10 * x));
+
+  function countUp(el, to, dec, dur) {
+    if (reduceMotion) { el.textContent = fmt(to, dec); return; }
+    const start = performance.now();
+    const tick = (now) => {
+      const k = easeOutExpo(Math.min((now - start) / dur, 1));
+      el.textContent = fmt(to * k, dec);
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  if (frame) {
+    const counters = $$('[data-count]', frame);
+    const feed = $('[data-feed]', frame);
+    const EVENTS = [
+      ['ok', 'Backup erstellt', 'shop.beispiel.de'],
+      ['blue', 'Workflow ausgeführt', 'Angebot erstellt'],
+      ['ok', 'Uptime-Check bestanden', 'api.beispiel.de'],
+      ['blue', 'Workflow ausgeführt', 'Rechnung versenden'],
+      ['ok', 'Sicherheits-Update', 'WordPress 6.x'],
+      ['blue', 'Bilder optimiert', '48 Dateien, AVIF'],
+      ['ok', 'SSL erneuert', 'beispiel.de'],
+      ['blue', 'Cache geleert', 'nach Deployment'],
+    ];
+    let ev = 0;
+    let started = false;
+
+    const io = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting || started) return;
+      started = true;
+      frame.classList.add('is-on');
+      counters.forEach((c) => countUp(c, parseFloat(c.dataset.count), Number(c.dataset.dec || 0), 2200));
+      if (reduceMotion) return;
+
+      const live = $('[data-live]', frame);
+      let liveVal = Number(live.dataset.count);
+      setTimeout(() => {
+        setInterval(() => {
+          liveVal += 1 + Math.floor(Math.random() * 3);
+          live.textContent = fmt(liveVal, 0);
+        }, 2600);
+      }, 2400);
+
+      setInterval(() => {
+        const [kind, title, sub] = EVENTS[ev++ % EVENTS.length];
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="feed-ico ${kind}"></span><span><b>${title}</b><small>${sub}</small></span><time>jetzt</time>`;
+        feed.prepend(li);
+        const items = $$('li', feed);
+        items.forEach((item, i) => {
+          if (i === 0) return;
+          const t = $('time', item);
+          if (t.textContent === 'jetzt') t.textContent = '1 min';
+        });
+        if (items.length > 6) items[items.length - 1].remove();
+      }, 3400);
+    }, { threshold: 0.25 });
+    io.observe(frame);
+  }
 
   /* ==========================================================
      Before / after performance panel
@@ -436,8 +393,6 @@
     req:    { before: 142, after: 31,  dec: 0 },
   };
   const CIRC = 2 * Math.PI * 52;
-  const fmt = (v, dec) => v.toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
-  const easeOutExpo = (x) => (x === 1 ? 1 : 1 - Math.pow(2, -10 * x));
   let perfState = 'before';
   let perfAnim = null;
 
@@ -445,9 +400,7 @@
     perfState = state;
     perf.classList.toggle('is-after', state === 'after');
     $$('.switch-btn', perf).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.state === state)));
-
-    const score = METRICS.score[state];
-    $('.gauge-fill', perf).style.strokeDashoffset = String(CIRC * (1 - score / 100));
+    $('.gauge-fill', perf).style.strokeDashoffset = String(CIRC * (1 - METRICS.score[state] / 100));
     $$('.metrics li', perf).forEach((li) => {
       const m = METRICS[li.dataset.m];
       li.querySelector('.m-bar > span').style.setProperty('--w', `${Math.max((m[state] / m.before) * 100, 3)}%`);
@@ -462,9 +415,8 @@
       return;
     }
     const start = performance.now();
-    const dur = 1500;
     const tick = (now) => {
-      const k = easeOutExpo(Math.min((now - start) / dur, 1));
+      const k = easeOutExpo(Math.min((now - start) / 1500, 1));
       nodes.forEach((n, i) => { n.textContent = fmt(lerp(from[i], to[i], k), METRICS[n.dataset.metric].dec); });
       if (k < 1) perfAnim = requestAnimationFrame(tick);
     };
@@ -493,11 +445,9 @@
       for (let i = 0; i < 60; i++) {
         const warn = Math.random() < 0.035;
         const h = warn ? 55 + Math.random() * 20 : 80 + Math.random() * 20;
-        const delay = (i * 12 + r * 60);
-        html += `<i class="${warn ? 'warn' : ''}" style="height:${h.toFixed(0)}%;margin-top:auto;transition-delay:${delay}ms"></i>`;
+        html += `<i class="${warn ? 'warn' : ''}" style="height:${h.toFixed(0)}%;transition-delay:${i * 12 + r * 60}ms"></i>`;
       }
       wrap.innerHTML = html;
-      wrap.style.alignItems = 'end';
     });
 
     const msNodes = $$('.s-ms', status);
@@ -542,14 +492,10 @@
       const topics = $$('input[name="topic"]:checked', form).map((i) => i.value);
       const d = form.elements;
       const subject = `Anfrage${topics.length ? ': ' + topics.join(', ') : ''}`;
-      const body = [
-        d.message.value.trim(),
-        '',
-        `Name: ${d.name.value.trim()}`,
-        d.company.value.trim() ? `Unternehmen: ${d.company.value.trim()}` : '',
-        `E-Mail: ${d.email.value.trim()}`,
-      ].filter((l, i) => l !== '' || i === 1).join('\n');
-      window.location.href = `mailto:kontakt@jk-unique.de?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      const lines = [d.message.value.trim(), '', `Name: ${d.name.value.trim()}`];
+      if (d.company.value.trim()) lines.push(`Unternehmen: ${d.company.value.trim()}`);
+      lines.push(`E-Mail: ${d.email.value.trim()}`);
+      window.location.href = `mailto:kontakt@jk-unique.de?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
       statusEl.className = 'form-status is-ok';
       statusEl.textContent = 'Ihr E-Mail-Programm wurde mit der Anfrage geöffnet. Bitte senden Sie die E-Mail dort ab.';
     });
