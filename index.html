@@ -17,6 +17,7 @@
   <canvas class="silk" aria-hidden="true"></canvas>
   <div class="grain" aria-hidden="true"></div>
 
+  <div class="progress" aria-hidden="true"></div>
   <a class="skip" href="#inhalt">Zum Inhalt springen</a>
 
   <header class="nav">
@@ -40,23 +41,23 @@
 
   <main id="inhalt">
     <!-- Hero -->
-    <section class="hero" id="top">
+    <section class="hero" id="top" data-theme="blue">
       <svg class="hero-lines" aria-hidden="true"></svg>
 
       <ul class="hero-nodes" aria-hidden="true">
-        <li style="--x:19%;--y:22%" class="left">
+        <li style="--x:19%;--y:22%" class="left" data-tone="blue">
           <span class="node-icon"><svg viewBox="0 0 24 24"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg></span>
           Website-Optimierung
         </li>
-        <li style="--x:81%;--y:22%" class="right">
+        <li style="--x:81%;--y:22%" class="right" data-tone="green">
           <span class="node-icon"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/></svg></span>
           Hosting &amp; Betrieb
         </li>
-        <li style="--x:19%;--y:78%" class="left">
+        <li style="--x:19%;--y:78%" class="left" data-tone="purple">
           <span class="node-icon"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H14a4 4 0 0 1 4 4v5.5"/></svg></span>
           Automationen
         </li>
-        <li style="--x:81%;--y:78%" class="right">
+        <li style="--x:81%;--y:78%" class="right" data-tone="red">
           <span class="node-icon"><svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V7z"/><path d="m9 12 2 2 4-4"/></svg></span>
           IT-Beratung
         </li>
@@ -81,7 +82,7 @@
     </section>
 
     <!-- Dashboard showcase -->
-    <section class="showcase" id="dashboard" aria-label="Beispielprojekt: so entsteht eine Website">
+    <section class="showcase" id="dashboard" data-theme="blue" aria-label="Beispielprojekt: so entsteht eine Website">
       <div class="cone" aria-hidden="true"></div>
       <div class="wrap">
         <div class="device-frame" data-tilt>
@@ -132,7 +133,7 @@
     </section>
 
     <!-- Leistungen -->
-    <section class="section" id="leistungen">
+    <section class="section" id="leistungen" data-theme="blue">
       <div class="wrap services-layout">
         <div class="services-intro" data-reveal>
           <h2>Was wir für Ihr Unternehmen tun</h2>
@@ -141,7 +142,7 @@
         </div>
 
         <div class="cards">
-          <article class="card" data-reveal>
+          <article class="card" data-reveal data-tone="blue" style="--d:0.00s">
             <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg></span>
             <h3>Website-Optimierung</h3>
             <p>Wir finden heraus, wo Ihre Seite Zeit verliert, und beheben die Ursachen.</p>
@@ -151,7 +152,7 @@
               <li>Optimiert für Smartphones</li>
             </ul>
           </article>
-          <article class="card" data-reveal>
+          <article class="card" data-reveal data-tone="green" style="--d:0.08s">
             <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/></svg></span>
             <h3>Hosting &amp; Betrieb</h3>
             <p>Server, die wir für Ihr Projekt einrichten und dauerhaft betreuen.</p>
@@ -161,7 +162,7 @@
               <li>Monitoring mit Alarmierung</li>
             </ul>
           </article>
-          <article class="card" data-reveal>
+          <article class="card" data-reveal data-tone="purple" style="--d:0.16s">
             <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H14a4 4 0 0 1 4 4v5.5"/></svg></span>
             <h3>Automationen</h3>
             <p>Wiederkehrende Arbeit übernehmen Workflows, die zuverlässig im Hintergrund laufen.</p>
@@ -171,7 +172,7 @@
               <li>Sauber dokumentiert</li>
             </ul>
           </article>
-          <article class="card" data-reveal>
+          <article class="card" data-reveal data-tone="red" style="--d:0.24s">
             <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V7z"/><path d="m9 12 2 2 4-4"/></svg></span>
             <h3>IT-Beratung</h3>
             <p>Wir ordnen gewachsene IT und machen daraus einen klaren Plan.</p>
@@ -186,7 +187,7 @@
     </section>
 
     <!-- Optimierung: Vorher / Nachher -->
-    <section class="section" id="optimierung">
+    <section class="section" id="optimierung" data-theme="blue">
       <div class="wrap split">
         <div class="split-text" data-reveal>
           <h2>Jede Millisekunde zählt</h2>
@@ -242,7 +243,7 @@
     </section>
 
     <!-- Hosting -->
-    <section class="section" id="hosting">
+    <section class="section" id="hosting" data-theme="green">
       <div class="wrap split split-reverse">
         <div class="split-text" data-reveal>
           <h2>Hosting, um das Sie sich nicht kümmern müssen</h2>
@@ -275,7 +276,7 @@
     </section>
 
     <!-- Automation -->
-    <section class="section" id="automation">
+    <section class="section" id="automation" data-theme="purple">
       <div class="wrap">
         <div class="section-head center" data-reveal>
           <h2>Was sich wiederholt, wird automatisiert</h2>
@@ -311,14 +312,14 @@
     </section>
 
     <!-- Haltung -->
-    <section class="section manifesto-section" aria-label="Unsere Haltung">
+    <section class="section manifesto-section" data-theme="purple" aria-label="Unsere Haltung">
       <div class="wrap">
         <p class="manifesto" data-manifesto>Keine Baukästen. Keine Standardpakete, die nur halb passen. Wir schauen uns an, wie Ihr Unternehmen wirklich arbeitet, und bauen genau das, was Sie weiterbringt.</p>
       </div>
     </section>
 
     <!-- Ablauf -->
-    <section class="section" id="ablauf">
+    <section class="section" id="ablauf" data-theme="red">
       <div class="wrap">
         <div class="section-head center" data-reveal>
           <h2>So arbeiten wir zusammen</h2>
@@ -363,7 +364,7 @@
     </section>
 
     <!-- Kontakt -->
-    <section class="section contact" id="kontakt">
+    <section class="section contact" id="kontakt" data-theme="blue">
       <div class="cone cone-low" aria-hidden="true"></div>
       <div class="wrap split">
         <div class="split-text" data-reveal>

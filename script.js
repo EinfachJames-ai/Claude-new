@@ -18,6 +18,8 @@
     uniform vec2 uMouse;
     uniform float uScroll;
     uniform float uOffset;
+    uniform vec3 uAccent;
+    uniform vec3 uDeep;
 
     float hash(vec2 p) {
       p = fract(p * vec2(123.34, 456.21));
@@ -57,16 +59,16 @@
       float sheen = smoothstep(0.1, 1.0, s * 0.5 + 0.5);
 
       vec3 col = vec3(0.010, 0.012, 0.024);
-      col += vec3(0.060, 0.070, 0.115) * sheen * f * 2.4;
-      col += vec3(0.30, 0.42, 0.95) * ridge * f * 0.34;
+      col += mix(vec3(0.060, 0.066, 0.085), uAccent * 0.14, 0.4) * sheen * f * 2.4;
+      col += uAccent * ridge * f * 0.34;
 
-      // blue light from above, fades as the page scrolls
+      // light from above in the colour of the current area
       float g = exp(-length((sp - vec2(0.0, 0.62)) * vec2(0.75, 1.5)) * 2.0);
-      col += vec3(0.10, 0.20, 0.85) * g * 0.6 * (1.0 - 0.6 * uScroll);
+      col += uDeep * g * 0.62 * (1.0 - 0.35 * uScroll);
 
       // soft light that follows the pointer
       vec2 mp = (uMouse - 0.5 * uRes) / uRes.y;
-      col += vec3(0.12, 0.22, 0.75) * exp(-length(sp - mp) * 3.5) * 0.10;
+      col += uDeep * exp(-length(sp - mp) * 3.5) * 0.11;
 
       // vignette + dither
       col *= 1.0 - 0.6 * pow(length(uv - 0.5) * 1.2, 2.0);
@@ -84,6 +86,17 @@
   let gl = null, uni = {};
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
   let scrollMix = 0;
+
+  // area colours: the page and the shader glide between them
+  const THEMES = {
+    blue:   { accent: '#4D7CFF', deep: '#1E3FD8' },
+    red:    { accent: '#F43F5E', deep: '#9F1239' },
+    green:  { accent: '#12C48B', deep: '#047857' },
+    purple: { accent: '#7C3AED', deep: '#4C1D95' },
+  };
+  const hexToRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const tint = { accent: hexToRgb(THEMES.blue.accent), deep: hexToRgb(THEMES.blue.deep) };
+  let tintTarget = { accent: tint.accent.slice(), deep: tint.deep.slice() };
 
   try {
     gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
@@ -110,7 +123,7 @@
       const loc = gl.getAttribLocation(prog, 'aPos');
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      ['uRes', 'uTime', 'uMouse', 'uScroll', 'uOffset'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
+      ['uRes', 'uTime', 'uMouse', 'uScroll', 'uOffset', 'uAccent', 'uDeep'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
     } catch (e) {
       gl = null;
     }
@@ -134,6 +147,12 @@
     gl.uniform2f(uni.uMouse, pointer.x, pointer.y);
     gl.uniform1f(uni.uScroll, scrollMix);
     gl.uniform1f(uni.uOffset, window.scrollY / window.innerHeight);
+    for (let i = 0; i < 3; i++) {
+      tint.accent[i] += (tintTarget.accent[i] - tint.accent[i]) * 0.025;
+      tint.deep[i] += (tintTarget.deep[i] - tint.deep[i]) * 0.025;
+    }
+    gl.uniform3fv(uni.uAccent, tint.accent);
+    gl.uniform3fv(uni.uDeep, tint.deep);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -179,6 +198,7 @@
      Hero connector lines (drawn in pixels so dashes stay crisp)
      ========================================================== */
   const heroLines = $('.hero-lines');
+  const LINE_TONES = ['blue', 'green', 'purple', 'red'];
   const LINES = [
     [[19, 22], [24, 22], [29, 31]],
     [[81, 22], [76, 22], [71, 31]],
@@ -192,7 +212,7 @@
     const d = LINES.map((pts) => pts.map(([x, y], i) => `${i ? 'L' : 'M'}${(x / 100 * w).toFixed(1)} ${(y / 100 * h).toFixed(1)}`).join(' '));
     heroLines.innerHTML =
       d.map((p) => `<path class="hl" d="${p}"/>`).join('') +
-      d.map((p) => `<path class="hl-pulse" pathLength="100" d="${p}"/>`).join('');
+      d.map((p, i) => `<path class="hl-pulse" data-tone="${LINE_TONES[i]}" pathLength="100" d="${p}"/>`).join('');
   }
   if (heroLines) {
     drawHeroLines();
@@ -248,6 +268,16 @@
   let lastY = window.scrollY;
   let ticking = false;
 
+  const progressBar = $('.progress');
+  const themed = $$('section[data-theme]');
+  let currentTheme = null;
+  function setTheme(name) {
+    currentTheme = name;
+    document.documentElement.dataset.theme = name;
+    tintTarget = { accent: hexToRgb(THEMES[name].accent), deep: hexToRgb(THEMES[name].deep) };
+    if (reduceMotion && gl) { tint.accent = tintTarget.accent.slice(); tint.deep = tintTarget.deep.slice(); render(0); }
+  }
+
   function onScroll() {
     ticking = false;
     const y = window.scrollY;
@@ -260,6 +290,17 @@
     }
     lastY = y;
     scrollMix = clamp(y / vh, 0, 1);
+
+    const max = document.documentElement.scrollHeight - vh;
+    progressBar.style.setProperty('--p', max > 0 ? (y / max).toFixed(4) : '0');
+
+    // switch the area colour when a section crosses the middle of the screen
+    let theme = 'blue';
+    for (const sec of themed) {
+      const r = sec.getBoundingClientRect();
+      if (r.top < vh * 0.5 && r.bottom > vh * 0.5) { theme = sec.dataset.theme; break; }
+    }
+    if (theme !== currentTheme) setTheme(theme);
 
     let current = null;
     sections.forEach((s, i) => {
