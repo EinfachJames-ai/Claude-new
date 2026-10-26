@@ -45,7 +45,7 @@
       // the pattern travels with the page (slight parallax) instead of standing still
       vec2 sp = p;
       p.y -= uOffset * 0.75;
-      float t = uTime * 0.075;
+      float t = uTime * 0.05;
 
       // domain-warped flow field
       vec2 q = vec2(fbm(p * 0.9 + vec2(0.0, t)), fbm(p * 0.9 + vec2(5.2, 1.3) - t));
@@ -87,16 +87,72 @@
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
   let scrollMix = 0;
 
-  // area colours: the page and the shader glide between them
+  /* Area colours. The colour is blended continuously from the scroll position
+     (in OKLab, so e.g. red to green never turns muddy) and then eased over time. */
   const THEMES = {
-    blue:   { accent: '#4D7CFF', deep: '#1E3FD8' },
-    red:    { accent: '#F43F5E', deep: '#9F1239' },
-    green:  { accent: '#12C48B', deep: '#047857' },
-    purple: { accent: '#7C3AED', deep: '#4C1D95' },
+    blue:   { accent: '#4D7CFF', hi: '#8EA9FF', deep: '#1E3FD8' },
+    red:    { accent: '#F43F5E', hi: '#FF97AA', deep: '#9F1239' },
+    green:  { accent: '#12C48B', hi: '#74E8BF', deep: '#047857' },
+    purple: { accent: '#7C3AED', hi: '#BBA0FF', deep: '#4C1D95' },
   };
-  const hexToRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-  const tint = { accent: hexToRgb(THEMES.blue.accent), deep: hexToRgb(THEMES.blue.deep) };
-  let tintTarget = { accent: tint.accent.slice(), deep: tint.deep.slice() };
+  const KEYS = ['accent', 'hi', 'deep'];
+  const toLin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const toSrgb = (c) => (c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
+  function hexToOklab(hex) {
+    const [r, g, b] = [1, 3, 5].map((i) => toLin(parseInt(hex.slice(i, i + 2), 16) / 255));
+    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+    const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+            1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+            0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s];
+  }
+  function oklabToRgb([L, a, b]) {
+    const l = Math.pow(L + 0.3963377774 * a + 0.2158037573 * b, 3);
+    const m = Math.pow(L - 0.1055613458 * a - 0.0638541728 * b, 3);
+    const s = Math.pow(L - 0.0894841775 * a - 1.2914855480 * b, 3);
+    return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+            -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+            -0.0041960771 * l - 0.7034186147 * m + 1.7076147010 * s].map((c) => clamp(toSrgb(c), 0, 1));
+  }
+  const LAB = {};
+  Object.keys(THEMES).forEach((n) => { LAB[n] = {}; KEYS.forEach((k) => { LAB[n][k] = hexToOklab(THEMES[n][k]); }); });
+  const mixLab = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+
+  const colorCur = { accent: LAB.blue.accent.slice(), hi: LAB.blue.hi.slice(), deep: LAB.blue.deep.slice() };
+  let colorTarget = { accent: LAB.blue.accent, hi: LAB.blue.hi, deep: LAB.blue.deep };
+  const tint = { accent: oklabToRgb(colorCur.accent), deep: oklabToRgb(colorCur.deep) };
+  const rootStyle = document.documentElement.style;
+
+  function applyColors() {
+    const rgb = {};
+    KEYS.forEach((k) => { rgb[k] = oklabToRgb(colorCur[k]); });
+    tint.accent = rgb.accent;
+    tint.deep = rgb.deep;
+    const css = (c) => `rgb(${c.map((v) => Math.round(v * 2550) / 10).join(' ')})`;
+    rootStyle.setProperty('--accent', css(rgb.accent));
+    rootStyle.setProperty('--accent-hi', css(rgb.hi));
+    rootStyle.setProperty('--accent-deep', css(rgb.deep));
+  }
+
+  // ease the current colour towards the scroll-derived target, frame-rate independent
+  let colorPrev = 0;
+  function colorLoop(now) {
+    requestAnimationFrame(colorLoop);
+    const dt = colorPrev ? Math.min(now - colorPrev, 100) : 16;
+    colorPrev = now;
+    const k = 1 - Math.exp(-dt / 420);
+    let delta = 0;
+    KEYS.forEach((key) => {
+      const c = colorCur[key], t = colorTarget[key];
+      for (let i = 0; i < 3; i++) {
+        const d = t[i] - c[i];
+        c[i] += d * k;
+        delta = Math.max(delta, Math.abs(d));
+      }
+    });
+    if (delta > 0.0004) applyColors();
+  }
 
   try {
     gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
@@ -147,10 +203,6 @@
     gl.uniform2f(uni.uMouse, pointer.x, pointer.y);
     gl.uniform1f(uni.uScroll, scrollMix);
     gl.uniform1f(uni.uOffset, window.scrollY / window.innerHeight);
-    for (let i = 0; i < 3; i++) {
-      tint.accent[i] += (tintTarget.accent[i] - tint.accent[i]) * 0.025;
-      tint.deep[i] += (tintTarget.deep[i] - tint.deep[i]) * 0.025;
-    }
     gl.uniform3fv(uni.uAccent, tint.accent);
     gl.uniform3fv(uni.uDeep, tint.deep);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -270,13 +322,33 @@
 
   const progressBar = $('.progress');
   const themed = $$('section[data-theme]');
-  let currentTheme = null;
-  function setTheme(name) {
-    currentTheme = name;
-    document.documentElement.dataset.theme = name;
-    tintTarget = { accent: hexToRgb(THEMES[name].accent), deep: hexToRgb(THEMES[name].deep) };
-    if (reduceMotion && gl) { tint.accent = tintTarget.accent.slice(); tint.deep = tintTarget.deep.slice(); render(0); }
+  const smoother = (a, b, v) => {
+    const x = clamp((v - a) / (b - a), 0, 1);
+    return x * x * x * (x * (x * 6 - 15) + 10);
+  };
+  // colour for the current scroll position: solid inside a section,
+  // blended across roughly 80% of a screen height around each border
+  function updateColorTarget(y, vh) {
+    const probe = y + vh * 0.5;
+    const zone = vh * 0.4;
+    let target = LAB[themed[0].dataset.theme];
+    let mixed = KEYS.reduce((o, k) => { o[k] = target[k]; return o; }, {});
+    for (let i = 1; i < themed.length; i++) {
+      const prev = themed[i - 1].dataset.theme, next = themed[i].dataset.theme;
+      if (prev === next) continue;
+      const border = themed[i].getBoundingClientRect().top + y;
+      const w = smoother(border - zone, border + zone, probe);
+      if (w <= 0) break;
+      KEYS.forEach((k) => { mixed[k] = mixLab(mixed[k], LAB[next][k], w); });
+    }
+    colorTarget = mixed;
+    if (reduceMotion) {
+      KEYS.forEach((k) => { colorCur[k] = mixed[k].slice(); });
+      applyColors();
+      if (gl) render(0);
+    }
   }
+  if (!reduceMotion) requestAnimationFrame(colorLoop);
 
   function onScroll() {
     ticking = false;
@@ -294,13 +366,7 @@
     const max = document.documentElement.scrollHeight - vh;
     progressBar.style.setProperty('--p', max > 0 ? (y / max).toFixed(4) : '0');
 
-    // switch the area colour when a section crosses the middle of the screen
-    let theme = 'blue';
-    for (const sec of themed) {
-      const r = sec.getBoundingClientRect();
-      if (r.top < vh * 0.5 && r.bottom > vh * 0.5) { theme = sec.dataset.theme; break; }
-    }
-    if (theme !== currentTheme) setTheme(theme);
+    updateColorTarget(y, vh);
 
     let current = null;
     sections.forEach((s, i) => {

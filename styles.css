@@ -29,7 +29,6 @@
   --section: clamp(96px, 13vw, 168px);
 
   color-scheme: dark;
-  transition: --accent 1.6s var(--ease-io), --accent-hi 1.6s var(--ease-io), --accent-deep 1.6s var(--ease-io);
 }
 
 /* Accent colour per area. Registered so the browser can blend between them. */
@@ -43,11 +42,8 @@
 
 :root,
 [data-tone="blue"] { --accent: #4D7CFF; --accent-hi: #8EA9FF; --accent-deep: #1E3FD8; }
-:root[data-theme="red"],
 [data-tone="red"] { --accent: #F43F5E; --accent-hi: #FF97AA; --accent-deep: #9F1239; }
-:root[data-theme="green"],
 [data-tone="green"] { --accent: #12C48B; --accent-hi: #74E8BF; --accent-deep: #047857; }
-:root[data-theme="purple"],
 [data-tone="purple"] { --accent: #7C3AED; --accent-hi: #BBA0FF; --accent-deep: #4C1D95; }
 [data-tone] { --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent); }
 
