@@ -683,7 +683,7 @@
         submitLabel.textContent = 'Anfrage gesendet';
         setTimeout(() => { submitLabel.textContent = 'Anfrage senden'; }, 4000);
       } catch (err) {
-        setStatus('error', 'Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder schreiben Sie direkt an kontakt@jk-unique.de.');
+        setStatus('error', 'Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder schreiben Sie direkt an kontakt@jk-unique.com.');
         submitLabel.textContent = 'Anfrage senden';
       } finally {
         submitBtn.disabled = false;
