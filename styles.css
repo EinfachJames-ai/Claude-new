@@ -52,6 +52,7 @@
 *::after { box-sizing: border-box; }
 
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
   scroll-padding-top: 88px;
   -webkit-text-size-adjust: 100%;
@@ -65,7 +66,7 @@ body {
   font-size: 1.0625rem;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 h1, h2, h3 {
@@ -120,9 +121,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
    ========================================================== */
 .silk {
   position: fixed;
-  inset: 0;
+  top: 0; left: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100lvh; /* largest viewport: the mobile URL bar does not resize it */
   z-index: -2;
   background:
     radial-gradient(80% 60% at 50% 0%, color-mix(in srgb, var(--accent-deep) 25%, transparent), transparent 70%),
@@ -130,7 +132,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 .grain {
   position: fixed;
-  inset: -50%;
+  inset: 0;
   z-index: -1;
   pointer-events: none;
   opacity: 0.06;
@@ -152,6 +154,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   filter: blur(40px);
   opacity: 0.85;
   animation: breathe 14s var(--ease-io) infinite alternate;
+  will-change: transform, opacity;
 }
 .cone-low {
   top: auto;
@@ -594,6 +597,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
    ========================================================== */
 .showcase {
   position: relative;
+  overflow-x: clip; /* keeps the wide light cone from widening the page */
   padding-bottom: clamp(64px, 8vw, 104px);
   perspective: 1600px;
 }
@@ -1473,6 +1477,27 @@ h2 {
 .footer nav { display: flex; gap: 24px; }
 .footer a { text-decoration: none; transition: color .3s; }
 .footer a:hover { color: var(--text); }
+
+/* ==========================================================
+   Touch devices: no background blur on content panels
+   (very expensive on phones while scrolling; the nav keeps its glass)
+   ========================================================== */
+@media (hover: none), (pointer: coarse) {
+  .panel,
+  .card,
+  .btn-outline,
+  .badge,
+  .device-frame,
+  .flow-node,
+  .node-icon {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .panel { background: linear-gradient(180deg, rgba(20, 24, 40, 0.92), rgba(10, 12, 22, 0.94)); }
+  .btn-outline { background: rgba(14, 17, 30, 0.85); }
+  .badge { background: rgba(14, 17, 30, 0.8); }
+  .cone { filter: blur(24px); }
+}
 
 /* ==========================================================
    Reduced motion

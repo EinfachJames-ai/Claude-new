@@ -20,6 +20,7 @@
     uniform float uOffset;
     uniform vec3 uAccent;
     uniform vec3 uDeep;
+    uniform int uOct;
 
     float hash(vec2 p) {
       p = fract(p * vec2(123.34, 456.21));
@@ -35,7 +36,10 @@
     float fbm(vec2 p) {
       float v = 0.0, a = 0.5;
       mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
-      for (int i = 0; i < 5; i++) { v += a * noise(p); p = m * p; a *= 0.5; }
+      for (int i = 0; i < 5; i++) {
+        if (i >= uOct) break;
+        v += a * noise(p); p = m * p; a *= 0.5;
+      }
       return v;
     }
 
@@ -82,7 +86,11 @@
   `;
 
   const canvas = $('.silk');
-  let RES_SCALE = 0.55;
+  // phones get a lighter shader so scrolling stays smooth
+  const isMobile = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 820;
+  let RES_SCALE = isMobile ? 0.35 : 0.55;
+  const MIN_SCALE = isMobile ? 0.25 : 0.3;
+  const OCTAVES = isMobile ? 4 : 5;
   let gl = null, uni = {};
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
   let scrollMix = 0;
@@ -179,15 +187,23 @@
       const loc = gl.getAttribLocation(prog, 'aPos');
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      ['uRes', 'uTime', 'uMouse', 'uScroll', 'uOffset', 'uAccent', 'uDeep'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
+      ['uRes', 'uTime', 'uMouse', 'uScroll', 'uOffset', 'uAccent', 'uDeep', 'uOct'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
     } catch (e) {
       gl = null;
     }
   }
 
-  function sizeCanvas() {
-    const w = Math.max(1, Math.round(window.innerWidth * RES_SCALE));
-    const h = Math.max(1, Math.round(window.innerHeight * RES_SCALE));
+  let canvasW = 0, canvasH = 0;
+  function sizeCanvas(force) {
+    const cssW = canvas.clientWidth || window.innerWidth;
+    const cssH = canvas.clientHeight || window.innerHeight;
+    // the canvas is sized to the largest viewport, so the mobile URL bar
+    // showing or hiding does not reallocate it
+    if (!force && cssW === canvasW && cssH === canvasH) return;
+    canvasW = cssW;
+    canvasH = cssH;
+    const w = Math.max(1, Math.round(cssW * RES_SCALE));
+    const h = Math.max(1, Math.round(cssH * RES_SCALE));
     canvas.width = w;
     canvas.height = h;
     if (gl) gl.viewport(0, 0, w, h);
@@ -205,6 +221,7 @@
     gl.uniform1f(uni.uOffset, window.scrollY / window.innerHeight);
     gl.uniform3fv(uni.uAccent, tint.accent);
     gl.uniform3fv(uni.uDeep, tint.deep);
+    gl.uniform1i(uni.uOct, OCTAVES);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -220,11 +237,11 @@
       const loop = (now) => {
         requestAnimationFrame(loop);
         if (!visible) { prev = 0; return; }
-        if (prev && RES_SCALE > 0.3) {
+        if (prev && RES_SCALE > MIN_SCALE) {
           samples++;
           if (now - prev > 26) slow++;
           if (samples === 90) {
-            if (slow > 45) { RES_SCALE = Math.max(0.3, RES_SCALE - 0.1); sizeCanvas(); }
+            if (slow > 45) { RES_SCALE = Math.max(MIN_SCALE, RES_SCALE - 0.05); sizeCanvas(true); }
             samples = slow = 0;
           }
         }
@@ -241,7 +258,7 @@
     if (finePointer && !reduceMotion) {
       window.addEventListener('pointermove', (e) => {
         pointer.tx = e.clientX * RES_SCALE;
-        pointer.ty = (window.innerHeight - e.clientY) * RES_SCALE;
+        pointer.ty = (canvasH - e.clientY) * RES_SCALE;
       }, { passive: true });
     }
   }
@@ -326,17 +343,36 @@
     const x = clamp((v - a) / (b - a), 0, 1);
     return x * x * x * (x * (x * 6 - 15) + 10);
   };
+
+  /* Layout positions are measured once (and again when the layout changes)
+     instead of on every scroll frame. offsetTop ignores transforms, so
+     reveal and tilt animations do not disturb the values. */
+  const docTop = (el) => { let t = 0; while (el) { t += el.offsetTop; el = el.offsetParent; } return t; };
+  let L = null;
+  function measure() {
+    L = {
+      vh: window.innerHeight,
+      max: document.documentElement.scrollHeight - window.innerHeight,
+      borders: themed.map(docTop),
+      sections: sections.map((sec) => [docTop(sec), sec.offsetHeight]),
+      frame: frame ? docTop(frame) : 0,
+      manifesto: manifesto ? [docTop(manifesto), manifesto.offsetHeight] : null,
+      steps: steps ? [docTop(steps), steps.offsetHeight] : null,
+      stepTops: stepItems.map(docTop),
+    };
+  }
+
   // colour for the current scroll position: solid inside a section,
   // blended across roughly 80% of a screen height around each border
   function updateColorTarget(y, vh) {
     const probe = y + vh * 0.5;
     const zone = vh * 0.4;
-    let target = LAB[themed[0].dataset.theme];
-    let mixed = KEYS.reduce((o, k) => { o[k] = target[k]; return o; }, {});
+    const target = LAB[themed[0].dataset.theme];
+    const mixed = KEYS.reduce((o, k) => { o[k] = target[k]; return o; }, {});
     for (let i = 1; i < themed.length; i++) {
       const prev = themed[i - 1].dataset.theme, next = themed[i].dataset.theme;
       if (prev === next) continue;
-      const border = themed[i].getBoundingClientRect().top + y;
+      const border = L.borders[i];
       const w = smoother(border - zone, border + zone, probe);
       if (w <= 0) break;
       KEYS.forEach((k) => { mixed[k] = mixLab(mixed[k], LAB[next][k], w); });
@@ -352,8 +388,9 @@
 
   function onScroll() {
     ticking = false;
+    if (!L) measure();
     const y = window.scrollY;
-    const vh = window.innerHeight;
+    const vh = L.vh;
 
     nav.classList.toggle('is-solid', y > 24);
     if (!menu.classList.contains('is-open')) {
@@ -362,43 +399,43 @@
     }
     lastY = y;
     scrollMix = clamp(y / vh, 0, 1);
-
-    const max = document.documentElement.scrollHeight - vh;
-    progressBar.style.setProperty('--p', max > 0 ? (y / max).toFixed(4) : '0');
+    progressBar.style.setProperty('--p', L.max > 0 ? clamp(y / L.max, 0, 1).toFixed(4) : '0');
 
     updateColorTarget(y, vh);
 
+    const line = y + vh * 0.4;
     let current = null;
-    sections.forEach((s, i) => {
-      const r = s.getBoundingClientRect();
-      if (r.top < vh * 0.4 && r.bottom > vh * 0.4) current = navLinks[i];
-    });
+    L.sections.forEach(([top, h], i) => { if (line > top && line < top + h) current = navLinks[i]; });
     navLinks.forEach((a) => a.classList.toggle('is-current', a === current));
 
     if (frame && !reduceMotion) {
-      const r = frame.getBoundingClientRect();
-      const tilt = clamp((r.top - vh * 0.12) / (vh * 0.7), 0, 1);
+      const tilt = clamp((L.frame - y - vh * 0.12) / (vh * 0.7), 0, 1);
       frame.style.setProperty('--tilt', tilt.toFixed(4));
     }
 
     if (words.length && !reduceMotion) {
-      const r = manifesto.getBoundingClientRect();
-      const p = clamp((vh * 0.85 - r.top) / (r.height + vh * 0.35), 0, 1);
+      const [top, h] = L.manifesto;
+      const p = clamp((vh * 0.85 - (top - y)) / (h + vh * 0.35), 0, 1);
       const lit = Math.round(p * words.length);
       words.forEach((w, i) => w.classList.toggle('on', i < lit));
     }
 
     if (steps) {
-      const r = steps.getBoundingClientRect();
-      steps.style.setProperty('--progress', clamp((vh * 0.6 - r.top) / r.height, 0, 1).toFixed(4));
-      stepItems.forEach((s) => s.classList.toggle('is-active', s.getBoundingClientRect().top + 26 < vh * 0.6));
+      const [top, h] = L.steps;
+      steps.style.setProperty('--progress', clamp((vh * 0.6 - (top - y)) / h, 0, 1).toFixed(4));
+      stepItems.forEach((s, i) => s.classList.toggle('is-active', L.stepTops[i] - y + 26 < vh * 0.6));
     }
   }
+
+  const remeasure = () => { measure(); onScroll(); };
+  if ('ResizeObserver' in window) new ResizeObserver(remeasure).observe(document.body);
+  if (document.fonts) document.fonts.ready.then(remeasure);
+  window.addEventListener('load', remeasure);
 
   window.addEventListener('scroll', () => {
     if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
   }, { passive: true });
-  window.addEventListener('resize', onScroll);
+  window.addEventListener('resize', remeasure);
   onScroll();
 
   /* ==========================================================
