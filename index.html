@@ -373,7 +373,11 @@
           <a class="contact-mail" href="mailto:kontakt@jk-unique.de">kontakt@jk-unique.de</a>
         </div>
 
-        <form class="panel form" data-reveal novalidate>
+        <form class="panel form" data-reveal novalidate action="https://api.web3forms.com/submit" method="POST">
+          <input type="hidden" name="access_key" value="74bddac8-e159-4045-b5fc-9db516f71c30">
+          <input type="hidden" name="subject" value="Neue Anfrage über jk-unique.de">
+          <input type="hidden" name="from_name" value="JK-Unique Website">
+          <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" style="display: none">
           <fieldset class="topics">
             <legend>Worum geht es?</legend>
             <label><input type="checkbox" name="topic" value="Website-Optimierung"><span>Website-Optimierung</span></label>
@@ -402,7 +406,8 @@
           </label>
 
           <p class="form-status" role="status" aria-live="polite"></p>
-          <button class="btn btn-primary btn-block" type="submit">Anfrage senden</button>
+          <button class="btn btn-primary btn-block" type="submit"><span class="btn-label">Anfrage senden</span></button>
+          <p class="form-note">Ihre Angaben verwenden wir nur, um Ihre Anfrage zu beantworten.</p>
         </form>
       </div>
     </section>

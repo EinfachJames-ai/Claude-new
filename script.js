@@ -621,13 +621,21 @@
   }
 
   /* ==========================================================
-     Contact form (opens the visitor's mail program)
+     Contact form (sent via Web3Forms)
      ========================================================== */
   const form = $('.form');
   if (form) {
     const statusEl = $('.form-status', form);
-    form.addEventListener('submit', (e) => {
+    const submitBtn = $('button[type="submit"]', form);
+    const submitLabel = $('.btn-label', submitBtn);
+    const setStatus = (kind, text) => {
+      statusEl.className = `form-status is-${kind}`;
+      statusEl.textContent = text;
+    };
+
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (submitBtn.disabled) return;
       const fields = ['name', 'email', 'message'].map((n) => form.elements[n]);
       let firstInvalid = null;
       fields.forEach((f) => {
@@ -636,22 +644,51 @@
         if (!ok && !firstInvalid) firstInvalid = f;
       });
       if (firstInvalid) {
-        statusEl.className = 'form-status is-error';
-        statusEl.textContent = firstInvalid.name === 'email' && firstInvalid.value
+        setStatus('error', firstInvalid.name === 'email' && firstInvalid.value
           ? 'Bitte prüfen Sie Ihre E-Mail-Adresse.'
-          : 'Bitte füllen Sie Name, E-Mail und Nachricht aus.';
+          : 'Bitte füllen Sie Name, E-Mail und Nachricht aus.');
         firstInvalid.focus();
         return;
       }
-      const topics = $$('input[name="topic"]:checked', form).map((i) => i.value);
+
       const d = form.elements;
-      const subject = `Anfrage${topics.length ? ': ' + topics.join(', ') : ''}`;
-      const lines = [d.message.value.trim(), '', `Name: ${d.name.value.trim()}`];
-      if (d.company.value.trim()) lines.push(`Unternehmen: ${d.company.value.trim()}`);
-      lines.push(`E-Mail: ${d.email.value.trim()}`);
-      window.location.href = `mailto:kontakt@jk-unique.de?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
-      statusEl.className = 'form-status is-ok';
-      statusEl.textContent = 'Ihr E-Mail-Programm wurde mit der Anfrage geöffnet. Bitte senden Sie die E-Mail dort ab.';
+      const topics = $$('input[name="topic"]:checked', form).map((i) => i.value);
+      const payload = {
+        access_key: d.access_key.value,
+        subject: topics.length ? `Neue Anfrage: ${topics.join(', ')}` : d.subject.value,
+        from_name: d.from_name.value,
+        botcheck: d.botcheck.checked,
+        name: d.name.value.trim(),
+        email: d.email.value.trim(),
+        Unternehmen: d.company.value.trim() || 'nicht angegeben',
+        Themen: topics.length ? topics.join(', ') : 'nicht ausgewählt',
+        message: d.message.value.trim(),
+      };
+
+      submitBtn.disabled = true;
+      submitBtn.classList.add('is-loading');
+      submitLabel.textContent = 'Wird gesendet';
+      setStatus('info', '');
+
+      try {
+        const res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) throw new Error(data.message || `HTTP ${res.status}`);
+        form.reset();
+        setStatus('ok', 'Danke, Ihre Anfrage ist angekommen. Wir melden uns innerhalb eines Werktags.');
+        submitLabel.textContent = 'Anfrage gesendet';
+        setTimeout(() => { submitLabel.textContent = 'Anfrage senden'; }, 4000);
+      } catch (err) {
+        setStatus('error', 'Die Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder schreiben Sie direkt an kontakt@jk-unique.de.');
+        submitLabel.textContent = 'Anfrage senden';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('is-loading');
+      }
     });
     form.addEventListener('input', (e) => {
       if (e.target.getAttribute('aria-invalid') === 'true' && e.target.value.trim()) {
