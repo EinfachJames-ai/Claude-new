@@ -1418,6 +1418,7 @@ h2 {
 .legal li { margin-bottom: 6px; }
 .legal a { color: var(--accent-hi); text-underline-offset: 3px; }
 .legal address { font-style: normal; color: var(--text); line-height: 1.7; }
+.legal code { font-family: var(--f-mono); font-size: 0.875em; color: var(--text); }
 .legal .card-block {
   margin: 0 0 8px;
   padding: 24px 26px;
