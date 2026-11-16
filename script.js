@@ -132,15 +132,26 @@
   const tint = { accent: oklabToRgb(colorCur.accent), deep: oklabToRgb(colorCur.deep) };
   const rootStyle = document.documentElement.style;
 
-  function applyColors() {
-    const rgb = {};
-    KEYS.forEach((k) => { rgb[k] = oklabToRgb(colorCur[k]); });
-    tint.accent = rgb.accent;
-    tint.deep = rgb.deep;
-    const css = (c) => `rgb(${c.map((v) => Math.round(v * 2550) / 10).join(' ')})`;
-    rootStyle.setProperty('--accent', css(rgb.accent));
-    rootStyle.setProperty('--accent-hi', css(rgb.hi));
-    rootStyle.setProperty('--accent-deep', css(rgb.deep));
+  /* The shader colour is updated every frame (cheap). The CSS variables are
+     written at most ~16 times per second: each write restyles the whole page,
+     which is what made fast scrolling stutter across area borders. */
+  const CSS_INTERVAL = 60;
+  let lastCss = 0, cssDirty = false;
+  const cssColor = (c) => `rgb(${c.map((v) => Math.round(v * 255)).join(' ')})`;
+  let lastCssValues = '';
+  function applyColors(now, force) {
+    tint.accent = oklabToRgb(colorCur.accent);
+    tint.deep = oklabToRgb(colorCur.deep);
+    if (!force && now - lastCss < CSS_INTERVAL) { cssDirty = true; return; }
+    lastCss = now;
+    cssDirty = false;
+    const vals = [cssColor(tint.accent), cssColor(oklabToRgb(colorCur.hi)), cssColor(tint.deep)];
+    const key = vals.join('|');
+    if (key === lastCssValues) return;
+    lastCssValues = key;
+    rootStyle.setProperty('--accent', vals[0]);
+    rootStyle.setProperty('--accent-hi', vals[1]);
+    rootStyle.setProperty('--accent-deep', vals[2]);
   }
 
   // ease the current colour towards the scroll-derived target, frame-rate independent
@@ -159,7 +170,8 @@
         delta = Math.max(delta, Math.abs(d));
       }
     });
-    if (delta > 0.0004) applyColors();
+    if (delta > 0.0004) applyColors(now, false);
+    else if (cssDirty) applyColors(now, true);
   }
 
   try {
@@ -380,11 +392,21 @@
     colorTarget = mixed;
     if (reduceMotion) {
       KEYS.forEach((k) => { colorCur[k] = mixed[k].slice(); });
-      applyColors();
+      applyColors(0, true);
       if (gl) render(0);
     }
   }
   if (!reduceMotion) requestAnimationFrame(colorLoop);
+
+  // only touch the style when a value really changes; unchanged writes still cost a restyle
+  const varCache = new WeakMap();
+  function setVar(el, name, value) {
+    let cache = varCache.get(el);
+    if (!cache) { cache = {}; varCache.set(el, cache); }
+    if (cache[name] === value) return;
+    cache[name] = value;
+    el.style.setProperty(name, value);
+  }
 
   function onScroll() {
     ticking = false;
@@ -399,7 +421,7 @@
     }
     lastY = y;
     scrollMix = clamp(y / vh, 0, 1);
-    progressBar.style.setProperty('--p', L.max > 0 ? clamp(y / L.max, 0, 1).toFixed(4) : '0');
+    setVar(progressBar, '--p', L.max > 0 ? clamp(y / L.max, 0, 1).toFixed(3) : '0');
 
     updateColorTarget(y, vh);
 
@@ -410,7 +432,7 @@
 
     if (frame && !reduceMotion) {
       const tilt = clamp((L.frame - y - vh * 0.12) / (vh * 0.7), 0, 1);
-      frame.style.setProperty('--tilt', tilt.toFixed(4));
+      setVar(frame, '--tilt', tilt.toFixed(3));
     }
 
     if (words.length && !reduceMotion) {
@@ -422,7 +444,7 @@
 
     if (steps) {
       const [top, h] = L.steps;
-      steps.style.setProperty('--progress', clamp((vh * 0.6 - (top - y)) / h, 0, 1).toFixed(4));
+      setVar(steps, '--progress', clamp((vh * 0.6 - (top - y)) / h, 0, 1).toFixed(3));
       stepItems.forEach((s, i) => s.classList.toggle('is-active', L.stepTops[i] - y + 26 < vh * 0.6));
     }
   }
