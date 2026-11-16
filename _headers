@@ -17,8 +17,10 @@
 /og-image.png
   Cache-Control: public, max-age=2592000
 
+# styles.css and script.js are requested with a content hash (?v=...),
+# so a new version always gets a new URL
 /styles.css
-  Cache-Control: public, max-age=3600, must-revalidate
+  Cache-Control: public, max-age=31536000, immutable
 
 /script.js
-  Cache-Control: public, max-age=3600, must-revalidate
+  Cache-Control: public, max-age=31536000, immutable

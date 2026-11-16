@@ -91,7 +91,7 @@
   let RES_SCALE = isMobile ? 0.35 : 0.55;
   const MIN_SCALE = isMobile ? 0.25 : 0.3;
   const OCTAVES = isMobile ? 4 : 5;
-  let gl = null, uni = {};
+  let gl = null, glReady = false, uni = {};
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
   let scrollMix = 0;
 
@@ -174,10 +174,6 @@
     else if (cssDirty) applyColors(now, true);
   }
 
-  try {
-    gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
-  } catch (e) { gl = null; }
-
   function compile(type, src) {
     const s = gl.createShader(type);
     gl.shaderSource(s, src);
@@ -186,12 +182,29 @@
     return s;
   }
 
-  if (gl) {
+  /* The background starts only after the page has loaded and the browser is
+     idle, split into small steps. Text and layout never wait for WebGL; until
+     the first frame is drawn, a static gradient is shown and the canvas then
+     fades in. */
+  const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
+  async function startBackground() {
+    let ctx = null;
     try {
+      ctx = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
+    } catch (e) { ctx = null; }
+    if (!ctx) return;
+    gl = ctx;
+    try {
+      await nextTask();
+      const vs = compile(gl.VERTEX_SHADER, VERT);
+      await nextTask();
+      const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+      await nextTask();
       const prog = gl.createProgram();
-      gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
-      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
       gl.linkProgram(prog);
+      await nextTask();
       gl.useProgram(prog);
       const buf = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -202,7 +215,10 @@
       ['uRes', 'uTime', 'uMouse', 'uScroll', 'uOffset', 'uAccent', 'uDeep', 'uOct'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
     } catch (e) {
       gl = null;
+      return;
     }
+    await nextTask();
+    runBackground();
   }
 
   let canvasW = 0, canvasH = 0;
@@ -237,13 +253,14 @@
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  if (gl) {
-    sizeCanvas();
+  function runBackground() {
+    sizeCanvas(true);
     let visible = true;
     document.addEventListener('visibilitychange', () => { visible = !document.hidden; });
-    if (reduceMotion) {
-      render(0);
-    } else {
+    glReady = true;
+    render(0);
+    canvas.classList.add('is-on');
+    if (!reduceMotion) {
       // drop internal resolution on slow devices so motion stays fluid
       let prev = 0, slow = 0, samples = 0;
       const loop = (now) => {
@@ -265,7 +282,7 @@
     let rt;
     window.addEventListener('resize', () => {
       clearTimeout(rt);
-      rt = setTimeout(() => { sizeCanvas(); if (reduceMotion) render(0); }, 120);
+      rt = setTimeout(() => { sizeCanvas(); if (reduceMotion && glReady) render(0); }, 120);
     });
     if (finePointer && !reduceMotion) {
       window.addEventListener('pointermove', (e) => {
@@ -274,6 +291,12 @@
       }, { passive: true });
     }
   }
+
+  const idle = window.requestIdleCallback
+    ? (fn) => window.requestIdleCallback(fn, { timeout: 1200 })
+    : (fn) => setTimeout(fn, 200);
+  if (document.readyState === 'complete') idle(startBackground);
+  else window.addEventListener('load', () => idle(startBackground), { once: true });
 
   /* ==========================================================
      Hero connector lines (drawn in pixels so dashes stay crisp)
@@ -339,10 +362,9 @@
 
   if (manifesto) {
     const text = manifesto.textContent.trim();
-    manifesto.setAttribute('aria-label', text);
-    manifesto.innerHTML = text.split(/\s+/)
-      .map((w) => `<span class="w" aria-hidden="true">${w}</span>`)
-      .join(' ');
+    // screen readers get the plain sentence, the word spans are decoration
+    manifesto.innerHTML = `<span class="sr-only">${text}</span><span aria-hidden="true">` +
+      text.split(/\s+/).map((w) => `<span class="w">${w}</span>`).join(' ') + '</span>';
     words = $$('.w', manifesto);
   }
 
@@ -393,7 +415,7 @@
     if (reduceMotion) {
       KEYS.forEach((k) => { colorCur[k] = mixed[k].slice(); });
       applyColors(0, true);
-      if (gl) render(0);
+      if (glReady) render(0);
     }
   }
   if (!reduceMotion) requestAnimationFrame(colorLoop);
