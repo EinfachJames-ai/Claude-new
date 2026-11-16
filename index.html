@@ -3,16 +3,99 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JK-Unique | IT-Optimierung, Hosting & Automation</title>
-  <meta name="description" content="JK-Unique optimiert, hostet und automatisiert: schnelle Websites, zuverlässiges Hosting und maßgeschneiderte Automationen für Unternehmen.">
+  <title>JK-Unique | Website-Optimierung, Hosting &amp; IT-Service im Allgäu</title>
+  <meta name="description" content="JK-Unique aus Dietmannsried (Allgäu): schnellere Websites, zuverlässiges Hosting und maßgeschneiderte Automationen für Unternehmen. Jetzt kostenloses Erstgespräch vereinbaren.">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="author" content="Fabian Krautmann">
+  <link rel="canonical" href="https://jk-unique.com/">
   <meta name="theme-color" content="#05060B">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Social previews (Open Graph / X) -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:site_name" content="JK-Unique">
+  <meta property="og:url" content="https://jk-unique.com/">
+  <meta property="og:title" content="JK-Unique | Website-Optimierung, Hosting &amp; IT-Service im Allgäu">
+  <meta property="og:description" content="Schnellere Websites, zuverlässiges Hosting und maßgeschneiderte Automationen für Unternehmen. Aus Dietmannsried im Allgäu.">
+  <meta property="og:image" content="https://jk-unique.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="JK Unique Logo">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="JK-Unique | Website-Optimierung, Hosting &amp; IT-Service im Allgäu">
+  <meta name="twitter:description" content="Schnellere Websites, zuverlässiges Hosting und maßgeschneiderte Automationen für Unternehmen.">
+  <meta name="twitter:image" content="https://jk-unique.com/og-image.png">
+
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+
+  <!-- the fonts of the first screen load in parallel with the CSS -->
+  <link rel="preload" href="fonts/sora-300-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/manrope-400-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="fonts/fonts.css">
   <link rel="stylesheet" href="styles.css">
-  <script>document.documentElement.classList.add('js')</script>
+  <script>
+    // Visitors get the entrance animations. Search engine and preview bots skip
+    // the hidden start states, so every text is visible in the first render.
+    if (!/bot|crawl|spider|slurp|bingpreview|lighthouse|facebookexternalhit|whatsapp|telegram|embedly|quora|pinterest|vkshare|w3c_validator/i.test(navigator.userAgent)) {
+      document.documentElement.classList.add('js');
+    }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ProfessionalService",
+        "@id": "https://jk-unique.com/#business",
+        "name": "JK-Unique",
+        "description": "IT-Dienstleister für Website-Optimierung, Hosting, Automationen und IT-Beratung für Unternehmen.",
+        "url": "https://jk-unique.com/",
+        "logo": "https://jk-unique.com/logo/logo-web.png",
+        "image": "https://jk-unique.com/og-image.png",
+        "email": "kontakt@jk-unique.com",
+        "telephone": "+49 1515 6201355",
+        "founder": { "@type": "Person", "name": "Fabian Krautmann" },
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Welserstraße 3",
+          "postalCode": "87463",
+          "addressLocality": "Dietmannsried",
+          "addressRegion": "Bayern",
+          "addressCountry": "DE"
+        },
+        "areaServed": [
+          { "@type": "AdministrativeArea", "name": "Allgäu" },
+          { "@type": "Country", "name": "Deutschland" }
+        ],
+        "knowsLanguage": "de",
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Leistungen",
+          "itemListElement": [
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Website-Optimierung", "description": "Kürzere Ladezeiten, verkleinerte Bilder und Dateien, optimiert für Smartphones." } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Hosting & Betrieb", "description": "Server-Einrichtung und Betreuung mit täglichen Backups, Updates und Monitoring." } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Automationen", "description": "Formulare, E-Mails und Dokumente automatisch verarbeiten." } },
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "IT-Beratung", "description": "Bestandsaufnahme, Einrichtung von E-Mail und Arbeitsplätzen, Backup- und Sicherheitskonzepte." } }
+          ]
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://jk-unique.com/#website",
+        "url": "https://jk-unique.com/",
+        "name": "JK-Unique",
+        "inLanguage": "de-DE",
+        "publisher": { "@id": "https://jk-unique.com/#business" }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <!-- Animated background -->
@@ -427,6 +510,6 @@
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="script.js" defer></script>
 </body>
 </html>

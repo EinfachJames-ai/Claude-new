@@ -727,10 +727,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 .preview.is-fading { opacity: 0; }
 .pv-part {
-  opacity: 0;
-  transform: translateY(10px);
   transition: opacity .7s var(--ease-out), transform .7s var(--ease-out);
 }
+.js .pv-part { opacity: 0; transform: translateY(10px); }
 .pv-part.is-shown { opacity: 1; transform: none; }
 
 .pv-head {
@@ -1158,9 +1157,9 @@ h2 {
   background: var(--mint);
   opacity: .7;
   transform-origin: bottom;
-  transform: scaleY(0);
   transition: transform .8s var(--ease-out), opacity .3s;
 }
+.js .s-bars i { transform: scaleY(0); }
 .s-bars i.warn { background: var(--amber); }
 .s-bars i:hover { opacity: 1; }
 .status.is-in .s-bars i { transform: scaleY(1); }
@@ -1276,7 +1275,8 @@ h2 {
   line-height: 1.25;
   letter-spacing: -0.035em;
 }
-.manifesto .w { opacity: 0.16; transition: opacity .5s; }
+.manifesto .w { transition: opacity .5s; }
+.js .manifesto .w { opacity: 0.16; }
 .manifesto .w.on { opacity: 1; }
 
 /* ==========================================================
