@@ -11,6 +11,9 @@
   /* ==========================================================
      Animated background: slow silk waves (WebGL)
      ========================================================== */
+  /* Silk waves built from a few layered sine waves. The earlier version
+     evaluated 25 noise lookups per pixel; this one needs about ten sines and
+     no loops, which is a small fraction of the GPU work for the same look. */
   const FRAG = `
     precision mediump float;
     uniform vec2 uRes;
@@ -20,27 +23,11 @@
     uniform float uOffset;
     uniform vec3 uAccent;
     uniform vec3 uDeep;
-    uniform int uOct;
 
     float hash(vec2 p) {
       p = fract(p * vec2(123.34, 456.21));
       p += dot(p, p + 45.32);
       return fract(p.x * p.y);
-    }
-    float noise(vec2 p) {
-      vec2 i = floor(p), f = fract(p);
-      vec2 u = f * f * (3.0 - 2.0 * f);
-      return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
-                 mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-    }
-    float fbm(vec2 p) {
-      float v = 0.0, a = 0.5;
-      mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
-      for (int i = 0; i < 5; i++) {
-        if (i >= uOct) break;
-        v += a * noise(p); p = m * p; a *= 0.5;
-      }
-      return v;
     }
 
     void main() {
@@ -51,14 +38,16 @@
       p.y -= uOffset * 0.75;
       float t = uTime * 0.05;
 
-      // domain-warped flow field
-      vec2 q = vec2(fbm(p * 0.9 + vec2(0.0, t)), fbm(p * 0.9 + vec2(5.2, 1.3) - t));
-      vec2 r = vec2(fbm(p + 2.6 * q + vec2(1.7, 9.2) + 0.6 * t),
-                    fbm(p + 2.6 * q + vec2(8.3, 2.8) - 0.4 * t));
-      float f = fbm(p * 0.8 + 1.8 * r);
+      // fold the plane with three slow, layered sine warps
+      vec2 q = p * 1.15;
+      q += 0.42 * sin(q.yx * 1.35 + vec2(t * 0.9, -t * 0.7));
+      q += 0.26 * sin(q.yx * 2.45 + vec2(-t * 0.6, t * 1.1) + vec2(1.7, 4.2));
+      q += 0.13 * sin(q.yx * 4.30 + vec2(t * 0.8, t * 0.5) + vec2(3.1, 0.6));
+      float f = 0.5 + 0.25 * sin(q.x * 1.6 + q.y * 1.1 + t)
+                    + 0.25 * sin(q.y * 2.3 - q.x * 0.7 - t * 0.6);
 
       // silk: long folded bands with thin bright ridges
-      float s = sin(p.x * 1.8 - p.y * 1.1 + f * 7.0 + t * 1.5);
+      float s = sin(q.x * 2.0 - q.y * 1.3 + f * 4.5 + t * 1.5);
       float ridge = pow(1.0 - abs(s), 5.0);
       float sheen = smoothstep(0.1, 1.0, s * 0.5 + 0.5);
 
@@ -88,9 +77,10 @@
   const canvas = $('.silk');
   // phones get a lighter shader so scrolling stays smooth
   const isMobile = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 820;
-  let RES_SCALE = isMobile ? 0.35 : 0.55;
-  const MIN_SCALE = isMobile ? 0.25 : 0.3;
-  const OCTAVES = isMobile ? 4 : 5;
+  let RES_SCALE = isMobile ? 0.3 : 0.4;
+  const MIN_SCALE = isMobile ? 0.2 : 0.25;
+  // the waves move slowly, so 30 frames per second look the same as 60
+  const FRAME_MS = 1000 / 30;
   let gl = null, glReady = false, uni = {};
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
   let scrollMix = 0;
@@ -212,7 +202,7 @@
       const loc = gl.getAttribLocation(prog, 'aPos');
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      ['uRes', 'uTime', 'uMouse', 'uScroll', 'uOffset', 'uAccent', 'uDeep', 'uOct'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
+      ['uRes', 'uTime', 'uMouse', 'uScroll', 'uOffset', 'uAccent', 'uDeep'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
     } catch (e) {
       gl = null;
       return;
@@ -249,7 +239,6 @@
     gl.uniform1f(uni.uOffset, window.scrollY / window.innerHeight);
     gl.uniform3fv(uni.uAccent, tint.accent);
     gl.uniform3fv(uni.uDeep, tint.deep);
-    gl.uniform1i(uni.uOct, OCTAVES);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -262,7 +251,7 @@
     canvas.classList.add('is-on');
     if (!reduceMotion) {
       // drop internal resolution on slow devices so motion stays fluid
-      let prev = 0, slow = 0, samples = 0;
+      let prev = 0, slow = 0, samples = 0, lastDraw = 0;
       const loop = (now) => {
         requestAnimationFrame(loop);
         if (!visible) { prev = 0; return; }
@@ -275,6 +264,8 @@
           }
         }
         prev = now;
+        if (now - lastDraw < FRAME_MS - 4) return;
+        lastDraw = now;
         render(now);
       };
       requestAnimationFrame(loop);
