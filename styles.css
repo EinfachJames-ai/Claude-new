@@ -1326,14 +1326,17 @@ h2 {
   transition: --progress .8s var(--ease-out);
   max-width: 760px;
   margin-inline: auto;
+  isolation: isolate; /* own stacking order: line below, steps above */
 }
 .steps::before,
 .steps::after {
   content: "";
   position: absolute;
   left: 25px; top: 26px; bottom: 26px;
+  z-index: 0;
   width: 1px;
   background: var(--line-strong);
+  pointer-events: none;
 }
 .steps::after {
   width: 2px;
@@ -1345,6 +1348,7 @@ h2 {
 }
 .step {
   position: relative;
+  z-index: 1; /* always above the line, also while the text fades in */
   display: grid;
   grid-template-columns: 52px 1fr;
   gap: clamp(20px, 4vw, 40px);
