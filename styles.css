@@ -157,28 +157,16 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 /* ==========================================================
    Animated background
    ========================================================== */
-.silk {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100vh;
-  height: 100lvh; /* largest viewport: the mobile URL bar does not resize it */
-  z-index: -2;
-  opacity: 0;
-  transition: opacity 1.6s var(--ease-io);
-}
-.silk.is-on { opacity: 1; }
-/* static stand-in until the animated background has drawn its first frame */
+/* soft blue light at the top of the page (scrolls away with the hero) */
 body:not(.legal-page)::before {
   content: "";
-  position: fixed;
+  position: absolute;
   top: 0; left: 0;
   width: 100%;
   height: 100vh;
-  height: 100lvh;
   z-index: -3;
   pointer-events: none;
-  background: radial-gradient(80% 60% at 50% 0%, color-mix(in srgb, var(--accent-deep) 55%, transparent), transparent 70%);
+  background: radial-gradient(80% 60% at 50% 0%, rgba(30, 63, 216, 0.5), transparent 70%);
 }
 .grain {
   position: fixed;
@@ -189,7 +177,7 @@ body:not(.legal-page)::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Breathing light cone (behind dashboard and contact) */
+/* Light cone behind the code window and the contact section (static) */
 .cone {
   position: absolute;
   left: 50%;
@@ -201,14 +189,11 @@ body:not(.legal-page)::before {
   z-index: -1;
   background:
     radial-gradient(44% 48% at 50% 58%,
-      color-mix(in srgb, var(--accent) 62%, transparent) 0%,
-      color-mix(in srgb, var(--accent) 38%, transparent) 22%,
-      color-mix(in srgb, var(--accent-deep) 24%, transparent) 46%,
-      color-mix(in srgb, var(--accent-deep) 8%, transparent) 64%,
+      color-mix(in srgb, var(--accent) 50%, transparent) 0%,
+      color-mix(in srgb, var(--accent) 30%, transparent) 22%,
+      color-mix(in srgb, var(--accent-deep) 20%, transparent) 46%,
+      color-mix(in srgb, var(--accent-deep) 6%, transparent) 64%,
       transparent 78%);
-  opacity: 0.85;
-  animation: breathe 14s var(--ease-io) infinite alternate;
-  will-change: transform, opacity;
 }
 .cone-low {
   top: auto;
@@ -216,9 +201,84 @@ body:not(.legal-page)::before {
   height: 700px;
   opacity: 0.35;
 }
-@keyframes breathe {
-  0% { transform: translateX(-50%) scale(0.94, 0.9); opacity: 0.7; }
-  100% { transform: translateX(-50%) scale(1.04, 1.06); opacity: 0.95; }
+
+/* ==========================================================
+   Hero aurora: three soft colour veils drifting behind the headline.
+   Only transform is animated, which the GPU composites without repainting.
+   ========================================================== */
+.aurora {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+}
+.aurora span {
+  position: absolute;
+  width: 62vmax;
+  height: 62vmax;
+  border-radius: 50%;
+  opacity: 0.55;
+  will-change: transform;
+  animation: drift-a 26s var(--ease-io) infinite alternate;
+}
+.aurora span:nth-child(1) {
+  left: -18vmax; top: -28vmax;
+  background: radial-gradient(circle, rgba(77, 124, 255, 0.9), rgba(30, 63, 216, 0.35) 38%, transparent 66%);
+}
+.aurora span:nth-child(2) {
+  right: -20vmax; top: -22vmax;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.85), rgba(76, 29, 149, 0.3) 38%, transparent 66%);
+  animation-name: drift-b;
+  animation-duration: 32s;
+}
+.aurora span:nth-child(3) {
+  left: 18vmax; top: 6vmax;
+  width: 48vmax; height: 48vmax;
+  opacity: 0.32;
+  background: radial-gradient(circle, rgba(18, 196, 139, 0.8), rgba(4, 120, 87, 0.25) 40%, transparent 66%);
+  animation-name: drift-c;
+  animation-duration: 38s;
+}
+@keyframes drift-a {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(14vmax, 8vmax, 0) scale(1.12); }
+  100% { transform: translate3d(6vmax, 16vmax, 0) scale(0.94); }
+}
+@keyframes drift-b {
+  0% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50% { transform: translate3d(-16vmax, 10vmax, 0) scale(0.92); }
+  100% { transform: translate3d(-6vmax, 18vmax, 0) scale(1.1); }
+}
+@keyframes drift-c {
+  0% { transform: translate3d(0, 0, 0) scale(0.9); }
+  50% { transform: translate3d(-12vmax, -6vmax, 0) scale(1.15); }
+  100% { transform: translate3d(10vmax, -2vmax, 0) scale(1); }
+}
+.hero.is-offscreen .aurora span { animation-play-state: paused; }
+
+/* ==========================================================
+   Sections: static glow in the area colour plus a fine dot grid
+   that fades out downwards. Painted once, nothing moves.
+   ========================================================== */
+.section[data-theme="blue"]   { --area: #4D7CFF; }
+.section[data-theme="green"]  { --area: #12C48B; }
+.section[data-theme="purple"] { --area: #7C3AED; }
+.section[data-theme="red"]    { --area: #F43F5E; }
+.section[data-theme]::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: min(720px, 90%);
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 55% at 50% 0%, color-mix(in srgb, var(--area) 16%, transparent), transparent 70%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1.4px) 0 0 / 28px 28px;
+  -webkit-mask-image: radial-gradient(80% 70% at 50% 0%, #000 30%, transparent 100%);
+  mask-image: radial-gradient(80% 70% at 50% 0%, #000 30%, transparent 100%);
 }
 
 /* ==========================================================
@@ -1256,28 +1316,36 @@ h2 {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
 }
 .flow-link span {
+  /* a full-length track whose end carries the dot; moving the track with
+     transform keeps the animation on the GPU (no layout per frame) */
   position: absolute;
   top: 50%; left: 0;
+  width: 100%; height: 0;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: pulse-x var(--cycle) var(--ease-io) infinite;
+}
+.flow-link span::after {
+  content: "";
+  position: absolute;
+  right: -4px; top: -4px;
   width: 8px; height: 8px;
-  margin: -4px 0 0 -4px;
   border-radius: 50%;
   background: var(--accent-hi);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent), 0 0 18px var(--accent);
-  opacity: 0;
-  animation: pulse-x var(--cycle) var(--ease-io) infinite;
 }
 .flow-link:nth-child(4) span { animation-delay: 1.2s; }
 .flow-link:nth-child(6) span { animation-delay: 2.4s; }
 
 @keyframes pulse-x {
-  0% { left: 0; opacity: 0; }
+  0% { transform: translateX(-100%); opacity: 0; }
   4%, 22% { opacity: 1; }
-  25%, 100% { left: 100%; opacity: 0; }
+  25%, 100% { transform: translateX(0); opacity: 0; }
 }
 @keyframes pulse-y {
-  0% { top: 0; opacity: 0; }
+  0% { transform: translateY(-100%); opacity: 0; }
   4%, 22% { opacity: 1; }
-  25%, 100% { top: 100%; opacity: 0; }
+  25%, 100% { transform: translateY(0); opacity: 0; }
 }
 @keyframes node-glow {
   0% { opacity: 1; }
@@ -1296,7 +1364,8 @@ h2 {
     margin-inline: auto;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
   }
-  .flow-link span { left: 50%; top: 0; animation-name: pulse-y; }
+  .flow-link span { left: 50%; top: 0; width: 0; height: 100%; animation-name: pulse-y; }
+  .flow-link span::after { right: -4px; top: auto; bottom: -4px; }
 }
 
 /* ==========================================================
@@ -1573,6 +1642,7 @@ h2 {
     transition-delay: 0s !important;
   }
   .stack-track { animation: none; }
+  .aurora span { animation: none; }
   .flow-link span,
   .hl-pulse { display: none; }
   .device-frame { transform: none; }

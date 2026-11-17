@@ -9,82 +9,8 @@
   const lerp = (a, b, t) => a + t * (b - a);
 
   /* ==========================================================
-     Animated background: slow silk waves (WebGL)
+     Area colours
      ========================================================== */
-  /* Silk waves built from a few layered sine waves. The earlier version
-     evaluated 25 noise lookups per pixel; this one needs about ten sines and
-     no loops, which is a small fraction of the GPU work for the same look. */
-  const FRAG = `
-    precision mediump float;
-    uniform vec2 uRes;
-    uniform float uTime;
-    uniform vec2 uMouse;
-    uniform float uScroll;
-    uniform float uOffset;
-    uniform vec3 uAccent;
-    uniform vec3 uDeep;
-
-    float hash(vec2 p) {
-      p = fract(p * vec2(123.34, 456.21));
-      p += dot(p, p + 45.32);
-      return fract(p.x * p.y);
-    }
-
-    void main() {
-      vec2 uv = gl_FragCoord.xy / uRes;
-      vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
-      // the pattern travels with the page (slight parallax) instead of standing still
-      vec2 sp = p;
-      p.y -= uOffset * 0.75;
-      float t = uTime * 0.05;
-
-      // fold the plane with three slow, layered sine warps
-      vec2 q = p * 1.15;
-      q += 0.42 * sin(q.yx * 1.35 + vec2(t * 0.9, -t * 0.7));
-      q += 0.26 * sin(q.yx * 2.45 + vec2(-t * 0.6, t * 1.1) + vec2(1.7, 4.2));
-      q += 0.13 * sin(q.yx * 4.30 + vec2(t * 0.8, t * 0.5) + vec2(3.1, 0.6));
-      float f = 0.5 + 0.25 * sin(q.x * 1.6 + q.y * 1.1 + t)
-                    + 0.25 * sin(q.y * 2.3 - q.x * 0.7 - t * 0.6);
-
-      // silk: long folded bands with thin bright ridges
-      float s = sin(q.x * 2.0 - q.y * 1.3 + f * 4.5 + t * 1.5);
-      float ridge = pow(1.0 - abs(s), 5.0);
-      float sheen = smoothstep(0.1, 1.0, s * 0.5 + 0.5);
-
-      vec3 col = vec3(0.010, 0.012, 0.024);
-      col += mix(vec3(0.060, 0.066, 0.085), uAccent * 0.14, 0.4) * sheen * f * 2.4;
-      col += uAccent * ridge * f * 0.34;
-
-      // light from above in the colour of the current area
-      float g = exp(-length((sp - vec2(0.0, 0.62)) * vec2(0.75, 1.5)) * 2.0);
-      col += uDeep * g * 0.62 * (1.0 - 0.35 * uScroll);
-
-      // soft light that follows the pointer
-      vec2 mp = (uMouse - 0.5 * uRes) / uRes.y;
-      col += uDeep * exp(-length(sp - mp) * 3.5) * 0.11;
-
-      // vignette + dither
-      col *= 1.0 - 0.6 * pow(length(uv - 0.5) * 1.2, 2.0);
-      col += (hash(gl_FragCoord.xy + fract(uTime)) - 0.5) * 0.012;
-      gl_FragColor = vec4(col, 1.0);
-    }
-  `;
-  const VERT = `
-    attribute vec2 aPos;
-    void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
-  `;
-
-  const canvas = $('.silk');
-  // phones get a lighter shader so scrolling stays smooth
-  const isMobile = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 820;
-  let RES_SCALE = isMobile ? 0.3 : 0.4;
-  const MIN_SCALE = isMobile ? 0.2 : 0.25;
-  // the waves move slowly, so 30 frames per second look the same as 60
-  const FRAME_MS = 1000 / 30;
-  let gl = null, glReady = false, uni = {};
-  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
-  let scrollMix = 0;
-
   /* Area colours. The colour is blended continuously from the scroll position
      (in OKLab, so e.g. red to green never turns muddy) and then eased over time. */
   const THEMES = {
@@ -119,23 +45,19 @@
 
   const colorCur = { accent: LAB.blue.accent.slice(), hi: LAB.blue.hi.slice(), deep: LAB.blue.deep.slice() };
   let colorTarget = { accent: LAB.blue.accent, hi: LAB.blue.hi, deep: LAB.blue.deep };
-  const tint = { accent: oklabToRgb(colorCur.accent), deep: oklabToRgb(colorCur.deep) };
   const rootStyle = document.documentElement.style;
 
-  /* The shader colour is updated every frame (cheap). The CSS variables are
-     written at most ~16 times per second: each write restyles the whole page,
-     which is what made fast scrolling stutter across area borders. */
+  /* The CSS variables are written at most ~16 times per second: each write
+     restyles the page, so this keeps fast scrolling across area borders smooth. */
   const CSS_INTERVAL = 60;
   let lastCss = 0, cssDirty = false;
   const cssColor = (c) => `rgb(${c.map((v) => Math.round(v * 255)).join(' ')})`;
   let lastCssValues = '';
   function applyColors(now, force) {
-    tint.accent = oklabToRgb(colorCur.accent);
-    tint.deep = oklabToRgb(colorCur.deep);
     if (!force && now - lastCss < CSS_INTERVAL) { cssDirty = true; return; }
     lastCss = now;
     cssDirty = false;
-    const vals = [cssColor(tint.accent), cssColor(oklabToRgb(colorCur.hi)), cssColor(tint.deep)];
+    const vals = KEYS.map((k) => cssColor(oklabToRgb(colorCur[k])));
     const key = vals.join('|');
     if (key === lastCssValues) return;
     lastCssValues = key;
@@ -145,9 +67,14 @@
   }
 
   // ease the current colour towards the scroll-derived target, frame-rate independent
-  let colorPrev = 0;
-  function colorLoop(now) {
+  let colorPrev = 0, colorRunning = false;
+  function startColorLoop() {
+    if (colorRunning || reduceMotion) return;
+    colorRunning = true;
+    colorPrev = 0;
     requestAnimationFrame(colorLoop);
+  }
+  function colorLoop(now) {
     const dt = colorPrev ? Math.min(now - colorPrev, 100) : 16;
     colorPrev = now;
     const k = 1 - Math.exp(-dt / 420);
@@ -160,134 +87,25 @@
         delta = Math.max(delta, Math.abs(d));
       }
     });
-    if (delta > 0.0004) applyColors(now, false);
-    else if (cssDirty) applyColors(now, true);
-  }
-
-  function compile(type, src) {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
-    return s;
-  }
-
-  /* The background starts only after the page has loaded and the browser is
-     idle, split into small steps. Text and layout never wait for WebGL; until
-     the first frame is drawn, a static gradient is shown and the canvas then
-     fades in. */
-  const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
-  async function startBackground() {
-    let ctx = null;
-    try {
-      ctx = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
-    } catch (e) { ctx = null; }
-    if (!ctx) return;
-    gl = ctx;
-    try {
-      await nextTask();
-      const vs = compile(gl.VERTEX_SHADER, VERT);
-      await nextTask();
-      const fs = compile(gl.FRAGMENT_SHADER, FRAG);
-      await nextTask();
-      const prog = gl.createProgram();
-      gl.attachShader(prog, vs);
-      gl.attachShader(prog, fs);
-      gl.linkProgram(prog);
-      await nextTask();
-      gl.useProgram(prog);
-      const buf = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-      const loc = gl.getAttribLocation(prog, 'aPos');
-      gl.enableVertexAttribArray(loc);
-      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      ['uRes', 'uTime', 'uMouse', 'uScroll', 'uOffset', 'uAccent', 'uDeep'].forEach((n) => { uni[n] = gl.getUniformLocation(prog, n); });
-    } catch (e) {
-      gl = null;
-      return;
-    }
-    await nextTask();
-    runBackground();
-  }
-
-  let canvasW = 0, canvasH = 0;
-  function sizeCanvas(force) {
-    const cssW = canvas.clientWidth || window.innerWidth;
-    const cssH = canvas.clientHeight || window.innerHeight;
-    // the canvas is sized to the largest viewport, so the mobile URL bar
-    // showing or hiding does not reallocate it
-    if (!force && cssW === canvasW && cssH === canvasH) return;
-    canvasW = cssW;
-    canvasH = cssH;
-    const w = Math.max(1, Math.round(cssW * RES_SCALE));
-    const h = Math.max(1, Math.round(cssH * RES_SCALE));
-    canvas.width = w;
-    canvas.height = h;
-    if (gl) gl.viewport(0, 0, w, h);
-    pointer.tx = pointer.x = w * 0.5;
-    pointer.ty = pointer.y = h * 0.75;
-  }
-
-  function render(time) {
-    pointer.x += (pointer.tx - pointer.x) * 0.04;
-    pointer.y += (pointer.ty - pointer.y) * 0.04;
-    gl.uniform2f(uni.uRes, canvas.width, canvas.height);
-    gl.uniform1f(uni.uTime, 40 + time / 1000);
-    gl.uniform2f(uni.uMouse, pointer.x, pointer.y);
-    gl.uniform1f(uni.uScroll, scrollMix);
-    gl.uniform1f(uni.uOffset, window.scrollY / window.innerHeight);
-    gl.uniform3fv(uni.uAccent, tint.accent);
-    gl.uniform3fv(uni.uDeep, tint.deep);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-  }
-
-  function runBackground() {
-    sizeCanvas(true);
-    let visible = true;
-    document.addEventListener('visibilitychange', () => { visible = !document.hidden; });
-    glReady = true;
-    render(0);
-    canvas.classList.add('is-on');
-    if (!reduceMotion) {
-      // drop internal resolution on slow devices so motion stays fluid
-      let prev = 0, slow = 0, samples = 0, lastDraw = 0;
-      const loop = (now) => {
-        requestAnimationFrame(loop);
-        if (!visible) { prev = 0; return; }
-        if (prev && RES_SCALE > MIN_SCALE) {
-          samples++;
-          if (now - prev > 26) slow++;
-          if (samples === 90) {
-            if (slow > 45) { RES_SCALE = Math.max(MIN_SCALE, RES_SCALE - 0.05); sizeCanvas(true); }
-            samples = slow = 0;
-          }
-        }
-        prev = now;
-        if (now - lastDraw < FRAME_MS - 4) return;
-        lastDraw = now;
-        render(now);
-      };
-      requestAnimationFrame(loop);
-    }
-    let rt;
-    window.addEventListener('resize', () => {
-      clearTimeout(rt);
-      rt = setTimeout(() => { sizeCanvas(); if (reduceMotion && glReady) render(0); }, 120);
-    });
-    if (finePointer && !reduceMotion) {
-      window.addEventListener('pointermove', (e) => {
-        pointer.tx = e.clientX * RES_SCALE;
-        pointer.ty = (canvasH - e.clientY) * RES_SCALE;
-      }, { passive: true });
+    if (delta > 0.0004) {
+      applyColors(now, false);
+      requestAnimationFrame(colorLoop);
+    } else {
+      KEYS.forEach((key) => { colorCur[key] = colorTarget[key].slice(); });
+      applyColors(now, true);
+      colorRunning = false;
     }
   }
 
-  const idle = window.requestIdleCallback
-    ? (fn) => window.requestIdleCallback(fn, { timeout: 1200 })
-    : (fn) => setTimeout(fn, 200);
-  if (document.readyState === 'complete') idle(startBackground);
-  else window.addEventListener('load', () => idle(startBackground), { once: true });
+  /* ==========================================================
+     Hero aurora: CSS-only animation, paused while the hero is off screen
+     ========================================================== */
+  const hero = $('.hero');
+  if (hero && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => {
+      hero.classList.toggle('is-offscreen', !entries[0].isIntersecting);
+    }).observe(hero);
+  }
 
   /* ==========================================================
      Hero connector lines (drawn in pixels so dashes stay crisp)
@@ -406,10 +224,10 @@
     if (reduceMotion) {
       KEYS.forEach((k) => { colorCur[k] = mixed[k].slice(); });
       applyColors(0, true);
-      if (glReady) render(0);
+    } else {
+      startColorLoop();
     }
   }
-  if (!reduceMotion) requestAnimationFrame(colorLoop);
 
   // only touch the style when a value really changes; unchanged writes still cost a restyle
   const varCache = new WeakMap();
@@ -433,7 +251,6 @@
       else if (y < lastY - 4) nav.classList.remove('is-hidden');
     }
     lastY = y;
-    scrollMix = clamp(y / vh, 0, 1);
     setVar(progressBar, '--p', L.max > 0 ? clamp(y / L.max, 0, 1).toFixed(3) : '0');
 
     updateColorTarget(y, vh);
