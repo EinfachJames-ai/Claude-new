@@ -163,10 +163,10 @@ body:not(.legal-page)::before {
   position: absolute;
   top: 0; left: 0;
   width: 100%;
-  height: 100vh;
+  height: 140vh;
   z-index: -3;
   pointer-events: none;
-  background: radial-gradient(80% 60% at 50% 0%, rgba(30, 63, 216, 0.5), transparent 70%);
+  background: radial-gradient(80% 55% at 50% 0%, rgba(30, 63, 216, 0.5), rgba(30, 63, 216, 0.12) 55%, transparent 80%);
 }
 .grain {
   position: fixed;
@@ -183,7 +183,7 @@ body:not(.legal-page)::before {
   left: 50%;
   top: -18%;
   width: min(1500px, 170vw);
-  height: 900px;
+  height: 1100px;
   transform: translateX(-50%);
   pointer-events: none;
   z-index: -1;
@@ -260,25 +260,82 @@ body:not(.legal-page)::before {
 .hero.is-offscreen .aurora span { animation-play-state: paused; }
 
 /* ==========================================================
-   Sections: static glow in the area colour plus a fine dot grid
-   that fades out downwards. Painted once, nothing moves.
+   Page atmosphere: no flat black anywhere.
+   1. The whole page sits on a dark gradient tinted along the area colours.
+   2. Every section carries soft light fields that sit inside the section,
+      alternate between left and right and reach into the neighbours, so
+      colours flow into each other instead of meeting at an edge.
+   All of it is painted once; nothing here moves.
    ========================================================== */
-.section[data-theme="blue"]   { --area: #4D7CFF; }
-.section[data-theme="green"]  { --area: #12C48B; }
-.section[data-theme="purple"] { --area: #7C3AED; }
-.section[data-theme="red"]    { --area: #F43F5E; }
-.section[data-theme]::before {
+body:not(.legal-page) {
+  background:
+    linear-gradient(180deg,
+      #070a1d 0%,
+      #060917 18%,
+      #070b1c 34%,
+      #05100f 47%,
+      #0a0819 58%,
+      #0c0716 66%,
+      #11070e 78%,
+      #080a1a 90%,
+      #05060B 100%);
+}
+
+.section[data-theme] { isolation: isolate; }
+.section[data-theme]::before,
+.section[data-theme]::after {
   content: "";
   position: absolute;
-  left: 0; right: 0; top: 0;
-  height: min(720px, 90%);
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(60% 55% at 50% 0%, color-mix(in srgb, var(--area) 16%, transparent), transparent 70%),
-    radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1.4px) 0 0 / 28px 28px;
-  -webkit-mask-image: radial-gradient(80% 70% at 50% 0%, #000 30%, transparent 100%);
-  mask-image: radial-gradient(80% 70% at 50% 0%, #000 30%, transparent 100%);
+  border-radius: 50%;
+}
+/* main light field, alternating sides */
+.section[data-theme]::before {
+  top: -12%;
+  bottom: -12%;
+  left: 0;
+  width: 75%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--a1) 22%, transparent), color-mix(in srgb, var(--a1) 8%, transparent) 55%, transparent);
+}
+/* second, smaller field in a neighbouring colour on the other side */
+.section[data-theme]::after {
+  top: 18%;
+  height: 70%;
+  right: 0;
+  width: 55%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--a2) 15%, transparent), transparent);
+}
+
+#leistungen   { --a1: #4D7CFF; --a2: #7C3AED; }
+#optimierung  { --a1: #3B82F6; --a2: #12C48B; }
+#hosting      { --a1: #12C48B; --a2: #4D7CFF; }
+#automation   { --a1: #7C3AED; --a2: #12C48B; }
+.manifesto-section { --a1: #8B5CF6; --a2: #F43F5E; }
+#ablauf       { --a1: #F43F5E; --a2: #7C3AED; }
+#kontakt      { --a1: #4D7CFF; --a2: #F43F5E; }
+
+/* mirror every second section so the light changes sides */
+#optimierung::before,
+#automation::before,
+#ablauf::before { left: auto; right: 0; }
+#optimierung::after,
+#automation::after,
+#ablauf::after { right: auto; left: 0; }
+
+/* a faint dot grid in the middle of the page, fading out on all sides */
+#leistungen .wrap,
+#ablauf .wrap { position: relative; }
+#leistungen .wrap::before,
+#ablauf .wrap::before {
+  content: "";
+  position: absolute;
+  inset: -80px 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1.4px) 0 0 / 28px 28px;
+  -webkit-mask-image: radial-gradient(closest-side, #000, transparent);
+  mask-image: radial-gradient(closest-side, #000, transparent);
 }
 
 /* ==========================================================
@@ -1595,7 +1652,7 @@ h2 {
    ========================================================== */
 .footer {
   border-top: 1px solid var(--line);
-  background: rgba(5, 6, 11, 0.85);
+  background: linear-gradient(180deg, transparent, rgba(5, 6, 11, 0.6));
   padding-block: 36px;
   font-size: 0.9375rem;
   color: var(--muted);
